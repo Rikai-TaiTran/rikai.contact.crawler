@@ -70,7 +70,7 @@ app.get("/companies", async (req, res) => {
   // Create the where clause with optional search and date range
   const whereClause = {
     [Op.and]: [
-      search ? { name: { [Op.iLike]: `%${search}%` } } : null,
+      search ? { name: { [Op.like]: `%${search}%` } } : null, // For MySQL, use Op.like
       startDate && endDate
         ? {
             created_date: {
@@ -100,7 +100,7 @@ app.get("/companies", async (req, res) => {
       currentPage: parseInt(page),
     });
   } catch (error) {
-    res.status(500).send("An error occurred while fetching companies");
+    res.status(500).send(error);
   }
 });
 
