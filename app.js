@@ -5,6 +5,8 @@ const fs = require("fs");
 const { Op } = require("sequelize");
 const { Company, sequelize } = require("./Company");
 const path = require("path");
+const { Parser } = require("json2csv"); // For CSV export
+const { Readable } = require("stream");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -29,7 +31,8 @@ app.post("/import", upload.single("file"), async (req, res) => {
       try {
         for (let record of results) {
           const created_date = new Date();
-          const { name, website, source } = record;
+          const { name, website, address, foundedDate, founded, source } =
+            record;
           // Use `website` if that's what your model expects
           const existingCompany = await Company.findOne({
             where: { website },
@@ -38,7 +41,15 @@ app.post("/import", upload.single("file"), async (req, res) => {
 
           if (!existingCompany) {
             await Company.create(
-              { name, website, source, created_date },
+              {
+                name,
+                website,
+                address,
+                foundedDate,
+                founded,
+                source,
+                created_date,
+              },
               { transaction }
             );
           }
@@ -101,6 +112,64 @@ app.get("/companies", async (req, res) => {
     });
   } catch (error) {
     res.status(500).send(error);
+  }
+});
+
+// Hàm tạo stream từ mảng dữ liệu
+function arrayToCSVStream(data, fields) {
+  const json2csvParser = new Parser({ fields });
+  const csv = json2csvParser.parse(data);
+
+  // Thêm BOM để hỗ trợ ký tự Unicode (như tiếng Nhật)
+  const csvWithBOM = "\uFEFF" + csv;
+
+  // Tạo stream từ chuỗi CSV
+  const stream = new Readable();
+  stream.push(csvWithBOM);
+  stream.push(null); // Kết thúc stream
+  return stream;
+}
+
+// Export filtered companies to CSV
+app.get("/export", async (req, res) => {
+  const { search = "", startDate, endDate } = req.query;
+
+  const whereClause = {
+    [Op.and]: [
+      search ? { name: { [Op.like]: `%${search}%` } } : null,
+      startDate && endDate
+        ? {
+            created_date: {
+              [Op.between]: [new Date(startDate), new Date(endDate)],
+            },
+          }
+        : null,
+    ].filter(Boolean),
+  };
+
+  try {
+    const companies = await Company.findAll({ where: whereClause });
+    const fields = [
+      "name",
+      "website",
+      "address",
+      "foundedDate",
+      "founded",
+      "source",
+      "created_date",
+    ]; // Các cột CSV
+
+    // Thiết lập header để trả về file CSV
+    res.setHeader("Content-Disposition", "attachment; filename=companies.csv");
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+
+    // Tạo stream CSV từ dữ liệu
+    const csvStream = arrayToCSVStream(companies, fields);
+    // Trả về CSV dưới dạng stream
+    csvStream.pipe(res);
+  } catch (error) {
+    //throw error;
+    res.status(500).send(`Error exporting CSV: ${error.message}`);
   }
 });
 

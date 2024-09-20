@@ -13,7 +13,7 @@
     <h2 class="text-2xl font-bold mb-4">Upload CSV</h2>
     <form id="csvForm" action="/import" method="POST" enctype="multipart/form-data">
       <input type="file" name="file" accept=".csv" class="mb-4">
-      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Upload CSV</button>
+      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Import CSV</button>
       <div id="uploadSpinner" class="hidden mt-2">
         <svg aria-hidden="true" class="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
@@ -28,10 +28,11 @@
   <div class="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md mb-6">
     <h2 class="text-2xl font-bold mb-4">Search Companies</h2>
     <form id="searchForm" class="mb-4">
-      <input type="text" name="search" placeholder="Search by company name..." class="p-2 border border-gray-300 rounded mb-2 w-full">
-      <input type="date" name="startDate" class="p-2 border border-gray-300 rounded mb-2 w-full">
-      <input type="date" name="endDate" class="p-2 border border-gray-300 rounded mb-4 w-full">
+      <input type="text" name="search" placeholder="Search by company name..." class="p-2 border border-gray-300 rounded mb-2 w-1/4">
+      <input type="date" name="startDate" class="p-2 border border-gray-300 rounded mb-2 w-1/4">
+      <input type="date" name="endDate" class="p-2 border border-gray-300 rounded mb-4 w-1/4">
       <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Search</button>
+      <button type="button" id="exportCSV" class="bg-blue-500 text-white px-4 py-2 rounded">Export CSV</button>
     </form>
   </div>
 
@@ -52,7 +53,7 @@
       </table>
     </div>
     <!-- Pagination Controls -->
-    <div id="paginationControls" class="max-w-lg mx-auto bg-white p-4 rounded-lg shadow-md mt-6">
+    <div id="paginationControls" class="max-w-screen-sm mx-auto bg-white p-4 rounded-lg shadow-md mt-6">
         <button id="prevPage" class="bg-gray-300 text-gray-700 px-4 py-2 rounded" disabled>Previous</button>
         <span id="pageInfo" class="mx-4"></span>
         <button id="nextPage" class="bg-gray-300 text-gray-700 px-4 py-2 rounded">Next</button>
@@ -102,34 +103,92 @@
     loadCompanies(currentPage, searchParams);
   });
 
+  // Thực hiện export CSV khi nhấn nút Export CSV
+    document.getElementById('exportCSV').addEventListener('click', async function () {
+    const formData = new FormData(document.getElementById('searchForm'));
+    const searchParams = new URLSearchParams(formData).toString(); // Lấy các tham số tìm kiếm
+    
+    try {
+        // Tạo URL cho request API export CSV
+        const response = await fetch(`/export?${searchParams}`, {
+        method: 'GET',
+        });
+
+        if (response.ok) {
+        // Tạo URL blob từ response để tải xuống file CSV
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+
+        // Tạo một thẻ <a> để tự động tải file xuống
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = 'companies.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove(); // Xoá thẻ sau khi hoàn tất
+        } else {
+        console.error('Failed to export CSV:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error exporting CSV:', error);
+    }
+    });
+
+
   // Update pagination controls
-  function updatePaginationControls(currentPage, totalPages) {
-    const prevButton = document.getElementById('prevPage');
-    const nextButton = document.getElementById('nextPage');
-    const pageInfo = document.getElementById('pageInfo');
+    function updatePaginationControls(currentPage, totalPages) {
+    const paginationControls = document.getElementById('paginationControls');
+    paginationControls.innerHTML = '';
 
-    // Update button states
+    // Calculate the range of visible page numbers (e.g., show 5 page numbers)
+    const maxVisiblePages = 10;
+    let startPage = Math.max(currentPage - Math.floor(maxVisiblePages / 2), 1);
+    let endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
+
+    if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(endPage - maxVisiblePages + 1, 1);
+    }
+
+    // "Previous" button
+    const prevButton = document.createElement('button');
+    prevButton.textContent = 'Previous';
+    prevButton.classList.add('bg-gray-300', 'text-gray-700', 'px-4', 'py-2', 'rounded');
     prevButton.disabled = currentPage === 1;
-    nextButton.disabled = currentPage === totalPages;
-
-    // Update page info
-    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-
-    // Set up button click handlers
     prevButton.onclick = () => {
-      if (currentPage > 1) {
+        if (currentPage > 1) {
         currentPage--;
-        loadCompanies(currentPage, searchParams); // Pass search params when paginating
-      }
+        loadCompanies(currentPage, searchParams);
+        }
     };
+    paginationControls.appendChild(prevButton);
 
+    // Page number buttons
+    for (let i = startPage; i <= endPage; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.classList.add('px-3', 'py-2', 'rounded', 'mx-1', i === currentPage ? 'bg-blue-500' : 'white');
+        pageButton.classList.add(i === currentPage ? 'text-white' : 'text-gray-700');
+
+        pageButton.onclick = () => {
+        currentPage = i;
+        loadCompanies(currentPage, searchParams);
+        };
+        paginationControls.appendChild(pageButton);
+    }
+
+    // "Next" button
+    const nextButton = document.createElement('button');
+    nextButton.textContent = 'Next';
+    nextButton.classList.add('bg-gray-300', 'text-gray-700', 'px-4', 'py-2', 'rounded', 'mx-1');
+    nextButton.disabled = currentPage === totalPages;
     nextButton.onclick = () => {
-      if (currentPage < totalPages) {
+        if (currentPage < totalPages) {
         currentPage++;
-        loadCompanies(currentPage, searchParams); // Pass search params when paginating
-      }
+        loadCompanies(currentPage, searchParams);
+        }
     };
-  }
+    paginationControls.appendChild(nextButton);
+    }
 
   // Fetch and display the company list in table format
     async function loadCompanies(page = 1, searchParams = '') {
