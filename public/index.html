@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company List</title>
+  <title>Rikai contact crawler list</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-4">
@@ -24,27 +24,29 @@
     </form>
   </div>
 
-  <!-- Search Form -->
-  <div class="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md mb-6">
-    <h2 class="text-2xl font-bold mb-4">Search Companies</h2>
-    <form id="searchForm" class="mb-4">
-      <input type="text" name="search" placeholder="Search by company name..." class="p-2 border border-gray-300 rounded mb-2 w-1/4">
-      <input type="date" name="startDate" class="p-2 border border-gray-300 rounded mb-2 w-1/4">
-      <input type="date" name="endDate" class="p-2 border border-gray-300 rounded mb-4 w-1/4">
-      <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Search</button>
-      <button type="button" id="exportCSV" class="bg-blue-500 text-white px-4 py-2 rounded">Export CSV</button>
-    </form>
-  </div>
-
   <!-- Company List -->
   <div class="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md">
     <h2 class="text-2xl font-bold mb-4">Company List</h2>
+    <!-- Search Form -->
+    <form id="searchForm" class="mb-4">
+        <input type="text" name="search" placeholder="Search by company name..." class="p-2 border border-gray-300 rounded mb-2 w-1/4">
+        <input type="date" name="startDate" class="p-2 border border-gray-300 rounded mb-2 w-1/4">
+        <input type="date" name="endDate" class="p-2 border border-gray-300 rounded mb-4 w-1/4">
+        <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Search</button>
+        <button type="button" id="exportCSV" class="bg-blue-500 text-white px-4 py-2 rounded">Export CSV</button>
+    </form>
     <div class="overflow-x-auto">
       <table class="table-fixed w-full border-collapse border border-gray-300">
         <thead>
-          <tr class="bg-gray-200">
-            <th class="border border-gray-300 px-4 py-2 w-[300px]">Company Name</th>
+          <tr class="bg-gray-200 text-left">
+            <th class="border border-gray-300 px-4 py-2">
+                <input type="checkbox" id="checkAll" class="w-4 h-4">
+            </th>
+            <th class="border border-gray-300 px-4 py-2">Company Name</th>
             <th class="border border-gray-300 px-4 py-2">Website</th>
+            <th class="border border-gray-300 px-4 py-2">Address</th>
+            <th class="border border-gray-300 px-4 py-2">Founded date</th>
+            <th class="border border-gray-300 px-4 py-2">CEO</th>
             <th class="border border-gray-300 px-4 py-2">Source</th>
             <th class="border border-gray-300 px-4 py-2">Created Date</th>
           </tr>
@@ -105,33 +107,46 @@
 
   // Thực hiện export CSV khi nhấn nút Export CSV
     document.getElementById('exportCSV').addEventListener('click', async function () {
-    const formData = new FormData(document.getElementById('searchForm'));
-    const searchParams = new URLSearchParams(formData).toString(); // Lấy các tham số tìm kiếm
-    
-    try {
-        // Tạo URL cho request API export CSV
-        const response = await fetch(`/export?${searchParams}`, {
-        method: 'GET',
-        });
+        const selectedIds = Array.from(document.querySelectorAll('.companyCheckbox:checked')).map(checkbox => checkbox.dataset.id);  
+        console.log(selectedIds);
+        const exportParams = selectedIds.length > 0 ? `ids=${selectedIds.join(',')}` : new URLSearchParams(new FormData(document.getElementById('searchForm'))).toString();
+        // const formData = new FormData(document.getElementById('searchForm'));
+        // const searchParams = new URLSearchParams(formData).toString(); // Lấy các tham số tìm kiếm
+        
+        try {
+            // Tạo URL cho request API export CSV
+            const response = await fetch(`/export?${exportParams}`, {
+            method: 'GET',
+            });
 
-        if (response.ok) {
-        // Tạo URL blob từ response để tải xuống file CSV
-        const blob = await response.blob();
-        const downloadUrl = URL.createObjectURL(blob);
+            if (response.ok) {
 
-        // Tạo một thẻ <a> để tự động tải file xuống
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = 'companies.csv';
-        document.body.appendChild(a);
-        a.click();
-        a.remove(); // Xoá thẻ sau khi hoàn tất
-        } else {
-        console.error('Failed to export CSV:', response.statusText);
+            const disposition = response.headers.get('Content-Disposition');
+            let filename = 'companies.csv'; // Default filename
+            
+            if (disposition && disposition.includes('filename=')) {
+                const matches = disposition.match(/filename="?([^";]+)"?/);
+                if (matches && matches[1]) {
+                    filename = matches[1]; // Set the filename from header
+                }
+            }
+            // Tạo URL blob từ response để tải xuống file CSV
+            const blob = await response.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+
+            // Tạo một thẻ <a> để tự động tải file xuống
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove(); // Xoá thẻ sau khi hoàn tất
+            } else {
+            console.error('Failed to export CSV:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error exporting CSV:', error);
         }
-    } catch (error) {
-        console.error('Error exporting CSV:', error);
-    }
     });
 
 
@@ -199,12 +214,18 @@
     data.data.forEach(company => {
         companyListHtml += `
         <tr>
-            <td class="border border-gray-300 px-4 py-2 w-[300px]">${company.name}</td>
             <td class="border border-gray-300 px-4 py-2">
-            <a class="text-blue-500" href="${company.website}" target="_blank">${company.website}</a>
+              <input type="checkbox" class="companyCheckbox w-4 h-4" data-id="${company.id}">
             </td>
-            <td class="border border-gray-300 px-4 py-2">${company.source}</td>
-            <td class="border border-gray-300 px-4 py-2">${new Date(company.created_date).toLocaleDateString()}</td>
+            <td class="border border-gray-300 px-4 py-2">${company?.name}</td>
+            <td class="border border-gray-300 px-4 py-2 break-words">
+            <a class="text-blue-500 break-words" href="${company?.website}" target="_blank">${company?.website}</a>
+            </td>
+            <td class="border border-gray-300 px-4 py-2 break-words">${company?.address ? company?.address : ''}</td>
+            <td class="border border-gray-300 px-4 py-2">${company?.foundedDate ? company?.foundedDate: ''}</td>
+            <td class="border border-gray-300 px-4 py-2">${company?.founded ? company?.founded : ''}</td>
+            <td class="border border-gray-300 px-4 py-2">${company?.source}</td>
+            <td class="border border-gray-300 px-4 py-2">${new Date(company?.created_date).toLocaleDateString()}</td>
         </tr>`;
     });
 
@@ -213,8 +234,15 @@
     updatePaginationControls(data.currentPage, data.pages);
     }
 
-  // Initial load
-  loadCompanies();
+    // Initial load
+    loadCompanies();
+
+    document.getElementById('checkAll').addEventListener('change', function () {
+        const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked; // Check or uncheck all checkboxes based on "Check All"
+        });
+    });
   </script>
 </body>
 </html>

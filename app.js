@@ -100,7 +100,8 @@ app.get("/companies", async (req, res) => {
     const companies = await Company.findAll({
       where: whereClause,
       limit: parseInt(pageSize),
-      offset: (page - 1) * pageSize, // Offset for pagination
+      offset: (page - 1) * pageSize,
+      order: [["created_date", "DESC"]], // Offset for pagination
     });
 
     // Send the data back with total, current page, and total pages
@@ -133,22 +134,38 @@ function arrayToCSVStream(data, fields) {
 // Export filtered companies to CSV
 app.get("/export", async (req, res) => {
   const { search = "", startDate, endDate } = req.query;
-
-  const whereClause = {
-    [Op.and]: [
-      search ? { name: { [Op.like]: `%${search}%` } } : null,
-      startDate && endDate
-        ? {
-            created_date: {
-              [Op.between]: [new Date(startDate), new Date(endDate)],
-            },
-          }
-        : null,
-    ].filter(Boolean),
-  };
+  const ids = req.query.ids ? req.query.ids.split(",") : [];
+  let companies;
+  if (ids && ids.length > 0) {
+    // If IDs are provided, fetch companies by IDs
+    companies = await Company.findAll({
+      where: {
+        id: {
+          [Op.in]: ids, // Use Op.in to match any of the provided IDs
+        },
+      },
+      order: [["created_date", "DESC"]],
+    });
+  } else {
+    const whereClause = {
+      [Op.and]: [
+        search ? { name: { [Op.like]: `%${search}%` } } : null,
+        startDate && endDate
+          ? {
+              created_date: {
+                [Op.between]: [new Date(startDate), new Date(endDate)],
+              },
+            }
+          : null,
+      ].filter(Boolean),
+    };
+    companies = await Company.findAll({
+      where: whereClause,
+      order: [["created_date", "DESC"]],
+    });
+  }
 
   try {
-    const companies = await Company.findAll({ where: whereClause });
     const fields = [
       "name",
       "website",
@@ -159,8 +176,15 @@ app.get("/export", async (req, res) => {
       "created_date",
     ]; // Các cột CSV
 
+    const today = new Date();
+    const formattedDate = `${String(today.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}${String(today.getDate()).padStart(2, "0")}${today.getFullYear()}`;
+
+    const filename = `company_${formattedDate}.csv`;
     // Thiết lập header để trả về file CSV
-    res.setHeader("Content-Disposition", "attachment; filename=companies.csv");
+    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
 
     // Tạo stream CSV từ dữ liệu
