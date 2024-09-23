@@ -16,6 +16,8 @@ app.use(express.json());
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, "public")));
 
+const BATCH_SIZE = 1000; // Kích thước của mỗi lô
+
 app.post("/import", upload.single("file"), async (req, res) => {
   if (!req.file) {
     return res.status(400).send("No file uploaded.");
@@ -29,29 +31,38 @@ app.post("/import", upload.single("file"), async (req, res) => {
       const transaction = await sequelize.transaction();
 
       try {
-        for (let record of results) {
-          const created_date = new Date();
-          const { name, website, address, foundedDate, founded, source } =
-            record;
-          // Use `website` if that's what your model expects
+        const created_date = new Date();
+        let batch = [];
+
+        for (let i = 0; i < results.length; i++) {
+          const { name, website, address, foundedDate, source } = results[i];
+
+          // Check for existing companies
           const existingCompany = await Company.findOne({
             where: { website },
             transaction,
           });
 
           if (!existingCompany) {
-            await Company.create(
-              {
-                name,
-                website,
-                address,
-                foundedDate,
-                founded,
-                source,
-                created_date,
-              },
-              { transaction }
-            );
+            batch.push({
+              name,
+              website,
+              address,
+              foundedDate,
+              source,
+              created_date,
+            });
+          }
+
+          // Nếu đạt đến kích thước lô thì chèn dữ liệu vào
+          if (batch.length === BATCH_SIZE || i === results.length - 1) {
+            await Company.bulkCreate(batch, { transaction });
+            batch = []; // Reset lô sau khi chèn xong
+          }
+
+          // Cập nhật tiến trình (optional)
+          if (i % 10000 === 0) {
+            console.log(`Đã xử lý ${i} bản ghi`);
           }
         }
 
@@ -61,7 +72,7 @@ app.post("/import", upload.single("file"), async (req, res) => {
         await transaction.rollback();
         res.status(500).send(`Error processing CSV file: ${error.message}`);
       } finally {
-        // Clean up the uploaded file
+        // Xóa tệp đã tải lên
         fs.unlink(req.file.path, (err) => {
           if (err) console.error(`Failed to delete file: ${err}`);
         });

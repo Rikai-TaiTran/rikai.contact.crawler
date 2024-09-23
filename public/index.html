@@ -54,8 +54,9 @@
         <tbody id="companyList"></tbody>
       </table>
     </div>
+    <div id="record-info" class="mt-4 text-sm text-gray-600"></div>
     <!-- Pagination Controls -->
-    <div id="paginationControls" class="max-w-screen-sm mx-auto bg-white p-4 rounded-lg shadow-md mt-6">
+    <div id="paginationControls" class="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md mt-6">
         <button id="prevPage" class="bg-gray-300 text-gray-700 px-4 py-2 rounded" disabled>Previous</button>
         <span id="pageInfo" class="mx-4"></span>
         <button id="nextPage" class="bg-gray-300 text-gray-700 px-4 py-2 rounded">Next</button>
@@ -231,6 +232,16 @@
 
     // Update company list and pagination controls
     document.getElementById('companyList').innerHTML = companyListHtml;
+     // Tính số lượng bản ghi hiện tại và hiển thị thông tin
+    const totalRecords = data.total;
+    const currentRecords = data.data.length;
+    const startRecord = (page - 1) * pageSize + 1;
+    const endRecord = startRecord + currentRecords - 1;
+
+    // Cập nhật thông tin hiển thị số bản ghi
+    document.getElementById('record-info').innerHTML = `Hiển thị từ <b>${startRecord}</b> đến <b>${endRecord}</b> trên tổng số <b>${totalRecords}</b> bản ghi`;
+
+    updatePaginationControls(page, Math.ceil(data.total / pageSize));
     updatePaginationControls(data.currentPage, data.pages);
     }
 
