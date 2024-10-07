@@ -1,26 +1,24 @@
 const express = require("express");
 const multer = require("multer");
+const cors = require("cors");
 const csv = require("csv-parser");
 const fs = require("fs");
 const { Op } = require("sequelize");
 const { Company, sequelize } = require("./Company");
-const path = require("path");
-const { Parser } = require("json2csv"); // For CSV export
+const { Parser } = require("json2csv");
 const { Readable } = require("stream");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
 
+const BATCH_SIZE = 1000; // Batch size for database inserts
+
 // Middleware for parsing JSON
-app.use(express.json());
-// Serve static files from the "public" directory
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json(), cors());
 
-const BATCH_SIZE = 1000; // Kích thước của mỗi lô
-
-app.post("/import", upload.single("file"), async (req, res) => {
+app.post("/api/import", upload.single("file"), async (req, res) => {
   if (!req.file) {
-    return res.status(400).send("No file uploaded.");
+    return res.status(400).json({ message: "No file uploaded." });
   }
 
   const results = [];
@@ -54,25 +52,27 @@ app.post("/import", upload.single("file"), async (req, res) => {
             });
           }
 
-          // Nếu đạt đến kích thước lô thì chèn dữ liệu vào
+          // If batch size is reached, insert into database
           if (batch.length === BATCH_SIZE || i === results.length - 1) {
             await Company.bulkCreate(batch, { transaction });
-            batch = []; // Reset lô sau khi chèn xong
+            batch = [];
           }
 
-          // Cập nhật tiến trình (optional)
+          // Log progress
           if (i % 10000 === 0) {
-            console.log(`Đã xử lý ${i} bản ghi`);
+            console.log(`Processed ${i} records`);
           }
         }
 
         await transaction.commit();
-        res.send("CSV file imported successfully");
+        res.json({ message: "CSV file imported successfully" });
       } catch (error) {
         await transaction.rollback();
-        res.status(500).send(`Error processing CSV file: ${error.message}`);
+        res
+          .status(500)
+          .json({ message: `Error processing CSV file: ${error.message}` });
       } finally {
-        // Xóa tệp đã tải lên
+        // Delete the uploaded file after processing
         fs.unlink(req.file.path, (err) => {
           if (err) console.error(`Failed to delete file: ${err}`);
         });
@@ -80,10 +80,10 @@ app.post("/import", upload.single("file"), async (req, res) => {
     });
 });
 
-app.get("/companies", async (req, res) => {
+app.get("/api/companies", async (req, res) => {
   const {
     page = 1,
-    pageSize = 10,
+    pageSize = 100,
     search = "",
     startDate,
     endDate,
@@ -92,7 +92,7 @@ app.get("/companies", async (req, res) => {
   // Create the where clause with optional search and date range
   const whereClause = {
     [Op.and]: [
-      search ? { name: { [Op.like]: `%${search}%` } } : null, // For MySQL, use Op.like
+      search ? { name: { [Op.like]: `%${search}%` } } : null,
       startDate && endDate
         ? {
             created_date: {
@@ -100,7 +100,7 @@ app.get("/companies", async (req, res) => {
             },
           }
         : null,
-    ].filter(Boolean), // Remove null values
+    ].filter(Boolean),
   };
 
   try {
@@ -112,10 +112,9 @@ app.get("/companies", async (req, res) => {
       where: whereClause,
       limit: parseInt(pageSize),
       offset: (page - 1) * pageSize,
-      order: [["created_date", "DESC"]], // Offset for pagination
+      order: [["created_date", "DESC"]],
     });
 
-    // Send the data back with total, current page, and total pages
     res.json({
       data: companies,
       total,
@@ -123,38 +122,34 @@ app.get("/companies", async (req, res) => {
       currentPage: parseInt(page),
     });
   } catch (error) {
-    res.status(500).send(error);
+    res.status(500).json({ message: error.message });
   }
 });
 
-// Hàm tạo stream từ mảng dữ liệu
+// Helper function to create CSV stream from data
 function arrayToCSVStream(data, fields) {
   const json2csvParser = new Parser({ fields });
   const csv = json2csvParser.parse(data);
 
-  // Thêm BOM để hỗ trợ ký tự Unicode (như tiếng Nhật)
+  // Add BOM for Unicode support (e.g., Japanese characters)
   const csvWithBOM = "\uFEFF" + csv;
 
-  // Tạo stream từ chuỗi CSV
+  // Create stream from the CSV string
   const stream = new Readable();
   stream.push(csvWithBOM);
-  stream.push(null); // Kết thúc stream
+  stream.push(null); // End stream
   return stream;
 }
 
-// Export filtered companies to CSV
-app.get("/export", async (req, res) => {
+app.get("/api/export", async (req, res) => {
   const { search = "", startDate, endDate } = req.query;
   const ids = req.query.ids ? req.query.ids.split(",") : [];
   let companies;
+
   if (ids && ids.length > 0) {
     // If IDs are provided, fetch companies by IDs
     companies = await Company.findAll({
-      where: {
-        id: {
-          [Op.in]: ids, // Use Op.in to match any of the provided IDs
-        },
-      },
+      where: { id: { [Op.in]: ids } },
       order: [["created_date", "DESC"]],
     });
   } else {
@@ -170,6 +165,7 @@ app.get("/export", async (req, res) => {
           : null,
       ].filter(Boolean),
     };
+
     companies = await Company.findAll({
       where: whereClause,
       order: [["created_date", "DESC"]],
@@ -182,33 +178,28 @@ app.get("/export", async (req, res) => {
       "website",
       "address",
       "foundedDate",
-      "founded",
       "source",
       "created_date",
-    ]; // Các cột CSV
+    ];
 
     const today = new Date();
     const formattedDate = `${String(today.getMonth() + 1).padStart(
       2,
       "0"
     )}${String(today.getDate()).padStart(2, "0")}${today.getFullYear()}`;
-
     const filename = `company_${formattedDate}.csv`;
-    // Thiết lập header để trả về file CSV
+
     res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
 
-    // Tạo stream CSV từ dữ liệu
     const csvStream = arrayToCSVStream(companies, fields);
-    // Trả về CSV dưới dạng stream
     csvStream.pipe(res);
   } catch (error) {
-    //throw error;
-    res.status(500).send(`Error exporting CSV: ${error.message}`);
+    res.status(500).json({ message: `Error exporting CSV: ${error.message}` });
   }
 });
 
-// Start server
+// Start the server
 app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+  console.log("API is running on port 3000");
 });
