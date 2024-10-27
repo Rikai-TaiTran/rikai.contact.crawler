@@ -8,36 +8,34 @@ import * as Yup from "yup";
 import { CiEdit } from "react-icons/ci";
 import { CiTrash } from "react-icons/ci";
 
-import {
-  FaUser,
-  FaBuilding,
-  FaEnvelope,
-  FaPhone,
-  FaCalendar,
-  FaPlus,
-  FaUpload,
-  FaPaperclip,
-  FaSpinner,
-} from "react-icons/fa";
+import { FaPlus, FaSpinner } from "react-icons/fa";
 import DialogConfirm from "@/components/dialog/DialogConfirm";
 
-const ToiawaseDetails = ({ params }) => {
+interface ToiawaseDetailsParams {
+  id: string; // or number, depending on your route structure
+  // Add other parameters as needed
+}
+
+interface ToiawaseDetailsProps {
+  params: ToiawaseDetailsParams;
+}
+
+const ToiawaseDetails: React.FC<ToiawaseDetailsProps> = ({ params }) => {
+  interface InfoRowType {
+    label: string;
+    value: string | undefined | boolean;
+  }
   const { id } = params;
-  const [loading, setLoading] = useState(false);
-  const [isOpenDialog, setIsOpenDialog] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isOpenDialog, setIsOpenDialog] = useState<boolean>(false);
   const router = useRouter();
-  const [toiawaseData, setToiawaseData] = useState();
-  const [users, setUsers] = useState();
-  const [newContact, setNewContact] = useState({
-    date: "",
-    content: "",
-  });
+  const [toiawaseData, setToiawaseData] = useState<toiawaseType>();
+  const [users, setUsers] = useState<userType[]>();
   useEffect(() => {
     fetchToiawase();
     fetchUsers();
     fetchToiawaseHistory();
   }, []);
-  const [files, setFiles] = useState([]);
 
   const validationSchema = Yup.object().shape({
     sendDate: Yup.date().required("Ngày gửi là bắt buộc").nullable(),
@@ -55,6 +53,7 @@ const ToiawaseDetails = ({ params }) => {
       hasMeeting: "true",
     },
     onSubmit: async (values, { resetForm }) => {
+      setLoading(true);
       const response = await http.post(
         `/api/toiawase_histories/toiawase/${id}`,
         values
@@ -62,6 +61,7 @@ const ToiawaseDetails = ({ params }) => {
       if (response) {
         fetchToiawaseHistory();
         resetForm();
+        setLoading(false);
       }
     },
   });
@@ -124,7 +124,7 @@ const ToiawaseDetails = ({ params }) => {
   // Dummy contact history
   const [contactHistory, setContactHistory] = useState([]);
 
-  const InfoRow = ({ label, value }) => (
+  const InfoRow = ({ label, value }: InfoRowType) => (
     <div className="flex items-center py-3 border-b border-gray-200">
       <div className="flex items-center w-1/3 text-gray-600">
         <span className="font-medium">{label}:</span>
@@ -237,7 +237,7 @@ const ToiawaseDetails = ({ params }) => {
                 onBlur={formik.handleBlur}
               >
                 <option value="">Chọn nhân viên</option>
-                {users?.map((item) => (
+                {users?.map((item: userType) => (
                   <option key={item?.id} value={item?.id}>
                     {item?.fullName}
                   </option>
@@ -300,7 +300,7 @@ const ToiawaseDetails = ({ params }) => {
           History send
         </h3>
         <div className="space-y-4">
-          {contactHistory.map((contact, index) => (
+          {contactHistory.map((contact: toiawaseContactType, index: number) => (
             <div key={index} className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-600">

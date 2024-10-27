@@ -1,17 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import http from "@/lib/http";
-import formatToISO from "@/utils/formatTime";
 import { useFormik } from "formik";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
 
-const ToiawaseAddForm = ({ id }) => {
-  const [toiawaseData, setToiawaseData] = useState();
-  const [leadTypes, setLeadTypes] = useState([]);
-  const [leadSources, setLeadSources] = useState([]);
-  const [leadStatuses, setLeadStatuses] = useState([]);
-  const [contactChannels, setContactChannels] = useState([]);
-  const [users, setUsers] = useState([]);
+interface ToiawaseAddFormProps {
+  id: string | number | null;
+}
+
+const ToiawaseAddForm: React.FC<ToiawaseAddFormProps> = ({ id }) => {
+  const [toiawaseData, setToiawaseData] = useState<toiawaseType>();
   const router = useRouter();
   const formik = useFormik({
     initialValues: {
@@ -21,7 +20,7 @@ const ToiawaseAddForm = ({ id }) => {
       companyAddress: toiawaseData?.companyAddress || "",
       crawlSource: toiawaseData?.crawlSource || "",
       businessActivities: toiawaseData?.businessActivities || "",
-      isBlackList: toiawaseData?.isBlackList || false,
+      isBlackList: toiawaseData?.isBlackList ? "true" : "false",
     },
     validationSchema: Yup.object({
       companyName: Yup.string().required("Tên công ty là bắt buộc"),
@@ -43,7 +42,6 @@ const ToiawaseAddForm = ({ id }) => {
   });
 
   useEffect(() => {
-    fetchUsers();
     if (id) {
       fetchLead();
     }
@@ -76,17 +74,6 @@ const ToiawaseAddForm = ({ id }) => {
       .put(`/api/toiawase/${id}`, values)
       .then((result) => {
         if (result) router.push("/toiawase");
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
-  const fetchUsers = async () => {
-    http
-      .get("/api/users/list")
-      .then((result) => {
-        setUsers(result?.data);
       })
       .catch((err) => {
         console.log(err);

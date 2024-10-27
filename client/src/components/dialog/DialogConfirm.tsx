@@ -1,9 +1,23 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FiAlertTriangle } from "react-icons/fi";
 
-const DialogConfirm = ({ isOpen, onClose, onConfirm, title, message }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const dialogRef = useRef(null);
+interface DialogConfirmProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+}
+
+const DialogConfirm: React.FC<DialogConfirmProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+}) => {
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setIsVisible(isOpen);
@@ -19,7 +33,7 @@ const DialogConfirm = ({ isOpen, onClose, onConfirm, title, message }) => {
   }, [isOpen]);
 
   const handleKeyDown = useCallback(
-    (event) => {
+    (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
       } else if (event.key === "Enter") {

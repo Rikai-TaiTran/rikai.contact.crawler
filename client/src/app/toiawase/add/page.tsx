@@ -1,15 +1,8 @@
 "use client";
-import LeadAddForm from "@/components/leads/LeadAddForm";
 import ToiawaseAddForm from "@/components/toiawase/ToiawaseAddForm";
-import http from "@/lib/http";
-import { useFormik } from "formik";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import * as Yup from "yup";
+import { useEffect } from "react";
 
 const ToiawaseNewPage = () => {
-  const router = useRouter();
-
   useEffect(() => {}, []);
 
   return (

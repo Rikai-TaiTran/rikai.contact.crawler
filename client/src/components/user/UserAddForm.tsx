@@ -1,16 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import http from "@/lib/http";
-import formatToISO from "@/utils/formatTime";
 import { useFormik } from "formik";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
 
-const UserAddForm = ({ id }) => {
-  const [userData, setUserData] = useState();
-  const [leadTypes, setLeadTypes] = useState([]);
-  const [leadSources, setLeadSources] = useState([]);
-  const [leadStatuses, setLeadStatuses] = useState([]);
-  const [contactChannels, setContactChannels] = useState([]);
+interface UserAddFormProps {
+  id: string | number | null;
+}
+
+const UserAddForm: React.FC<UserAddFormProps> = ({ id }) => {
+  const [userData, setUserData] = useState<userType>();
   const router = useRouter();
   const formik = useFormik({
     initialValues: {

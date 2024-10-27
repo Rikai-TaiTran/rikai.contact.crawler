@@ -1,14 +1,8 @@
 "use client";
 import LeadAddForm from "@/components/leads/LeadAddForm";
-import http from "@/lib/http";
-import { useFormik } from "formik";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import * as Yup from "yup";
+import { useEffect } from "react";
 
 const LeadNewPage = () => {
-  const router = useRouter();
-
   useEffect(() => {}, []);
 
   return (

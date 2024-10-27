@@ -1,14 +1,17 @@
 "use client";
 import LeadAddForm from "@/components/leads/LeadAddForm";
-import http from "@/lib/http";
-import { useFormik } from "formik";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import * as Yup from "yup";
+import { useEffect } from "react";
 
-const LeadEditPage = ({ params }) => {
+interface LeadEditPageParams {
+  id: string; // or number, depending on your route structure
+  // Add other parameters as needed
+}
+
+interface LeadEditPageProps {
+  params: LeadEditPageParams;
+}
+const LeadEditPage: React.FC<LeadEditPageProps> = ({ params }) => {
   const { id } = params;
-  const router = useRouter();
 
   useEffect(() => {}, []);
 

@@ -1,13 +1,8 @@
 "use client";
 import UserAddForm from "@/components/user/UserAddForm";
-import { useFormik } from "formik";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import * as Yup from "yup";
+import { useEffect } from "react";
 
 const AddNewUserPage = () => {
-  const router = useRouter();
-
   useEffect(() => {}, []);
 
   return (

@@ -6,36 +6,38 @@ import { useEffect, useState } from "react";
 import { CiEdit, CiTrash } from "react-icons/ci";
 import * as Yup from "yup";
 
-import {
-  FaUser,
-  FaBuilding,
-  FaEnvelope,
-  FaPhone,
-  FaCalendar,
-  FaPlus,
-  FaUpload,
-  FaPaperclip,
-  FaSpinner,
-} from "react-icons/fa";
-import { ErrorMessage } from "formik";
+import { FaPlus, FaUpload, FaPaperclip, FaSpinner } from "react-icons/fa";
 import { useFormik } from "formik";
 import Link from "next/link";
 import DialogConfirm from "@/components/dialog/DialogConfirm";
 
-const LeadDetails = ({ params }) => {
-  const { id } = params;
-  console.log(id);
+interface LeadDetailsParams {
+  id: string; // or number, depending on your route structure
+  // Add other parameters as needed
+}
 
-  const [loading, setLoading] = useState(false);
+interface LeadDetailsProps {
+  params: LeadDetailsParams;
+}
+
+interface InfoRowType {
+  label: string;
+  value: string | undefined | null;
+}
+const LeadDetails: React.FC<LeadDetailsProps> = ({ params }) => {
+  const { id } = params;
   const router = useRouter();
-  const [leadData, setLeadData] = useState();
-  const [contactHistory, setContactHistory] = useState([]);
-  const [isOpenDialog, setIsOpenDialog] = useState(false);
+  const [leadData, setLeadData] = useState<leadType>();
+  const [contactHistory, setContactHistory] = useState<
+    contactHistoryLeadType[]
+  >([]);
+  const [isOpenDialog, setIsOpenDialog] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   useEffect(() => {
     fetchLead();
     fetchLeadHistory();
   }, []);
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState<File[]>([]);
 
   const contactSchema = Yup.object().shape({
     date: Yup.date().required("Contact date is required"),
@@ -58,6 +60,7 @@ const LeadDetails = ({ params }) => {
       });
 
       try {
+        setLoading(true);
         // Submit the FormData
         const response = await http.post(
           `/api/lead_histories/${id}`,
@@ -70,6 +73,7 @@ const LeadDetails = ({ params }) => {
         );
         if (response) {
           fetchLeadHistory();
+          setLoading(false);
           resetForm();
           setFiles([]);
         }
@@ -124,12 +128,12 @@ const LeadDetails = ({ params }) => {
     deleteLead();
   };
 
-  const handleFileChange = (e) => {
-    const newFiles = Array.from(e.target.files);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newFiles = Array.from(e.target.files || []);
     setFiles([...files, ...newFiles]);
   };
 
-  const InfoRow = ({ label, value }) => (
+  const InfoRow = ({ label, value }: InfoRowType) => (
     <div className="flex items-center py-3 border-b border-gray-200">
       <div className="flex items-center w-1/3 text-gray-600">
         <span className="font-medium">{label}:</span>
@@ -245,7 +249,7 @@ const LeadDetails = ({ params }) => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows="4"
+              rows={4}
             />
             {formik.touched.content && formik.errors.content && (
               <div className="text-red-500 text-sm mt-1">
@@ -279,32 +283,34 @@ const LeadDetails = ({ params }) => {
           Contact History
         </h3>
         <div className="space-y-4">
-          {contactHistory.map((contact, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">
-                  {formatToISO(contact?.contact_date)}
-                </span>
-                {/* {contact.attachments.length > 0 && (
+          {contactHistory.map(
+            (contact: contactHistoryLeadType, index: number) => (
+              <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">
+                    {formatToISO(contact?.contact_date)}
+                  </span>
+                  {/* {contact.attachments.length > 0 && (
                   <div className="flex items-center text-sm text-gray-600">
                     <FaPaperclip className="mr-1" />
                     {contact.attachments.length} attachment(s)
                   </div>
                 )} */}
-              </div>
-              <p className="text-gray-800">{contact?.description}</p>
-              {contact?.file && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <Link target="_blank" href={contact?.file?.fileUrl}>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-700">
-                      <FaPaperclip className="mr-1" />
-                      {contact?.file?.fileName}
-                    </span>
-                  </Link>
                 </div>
-              )}
-            </div>
-          ))}
+                <p className="text-gray-800">{contact?.description}</p>
+                {contact?.file && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Link target="_blank" href={contact?.file?.fileUrl}>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-700">
+                        <FaPaperclip className="mr-1" />
+                        {contact?.file?.fileName}
+                      </span>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )
+          )}
         </div>
       </div>
       <DialogConfirm

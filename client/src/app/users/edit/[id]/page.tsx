@@ -1,13 +1,18 @@
 "use client";
 import UserAddForm from "@/components/user/UserAddForm";
-import { useFormik } from "formik";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import * as Yup from "yup";
+import { useEffect } from "react";
 
-const EditUserPage = ({ params }) => {
+interface EditUserPageParams {
+  id: string; // or number, depending on your route structure
+  // Add other parameters as needed
+}
+
+interface EditUserPageProps {
+  params: EditUserPageParams;
+}
+
+const EditUserPage: React.FC<EditUserPageProps> = ({ params }) => {
   const { id } = params;
-  const router = useRouter();
 
   useEffect(() => {}, []);
 

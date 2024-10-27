@@ -1,59 +1,43 @@
 "use client";
 
-import LeadsBoard from "@/components/leads/LeadsBoard";
 import Pagination from "@/components/Pagination";
 import http from "@/lib/http";
 import formatToISO from "@/utils/formatTime";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { CiCirclePlus } from "react-icons/ci";
 
 export default function LeadsPage() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [searchParams, setSearchParams] = useState("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [total, setTotal] = useState<number>(0);
+  const [searchParams, setSearchParams] = useState<string>("");
   const [searchForm, setSearchForm] = useState({
     search: "",
     leadClassification: "",
     leadStatus: "",
     leadSource: "",
   });
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [uploadMessage, setUploadMessage] = useState("");
-  const [uploadSpinner, setUploadSpinner] = useState(false);
-  const [leadTypes, setLeadTypes] = useState([]);
-  const [leadSources, setLeadSources] = useState([]);
-  const [leadStatuses, setLeadStatuses] = useState([]);
-  const [contactChannels, setContactChannels] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [leads, setLeads] = useState<any[]>([]);
-  const [error, setError] = useState(null);
+  // const [selectedIds, setSelectedIds] = useState([]);
+  // const [uploadMessage, setUploadMessage] = useState("");
+  // const [uploadSpinner, setUploadSpinner] = useState(false);
+  const [leadTypes, setLeadTypes] = useState<leadTypeType[]>([]);
+  const [leadSources, setLeadSources] = useState<leadSourcesType[]>([]);
+  const [leadStatuses, setLeadStatuses] = useState<leadStatusType[]>([]);
+  // const [contactChannels, setContactChannels] = useState([]);
+  // const [users, setUsers] = useState([]);
+  const [leads, setLeads] = useState<leadType[]>([]);
   const pageSize = 20;
   const router = useRouter();
 
   const totalPages = Math.ceil(total / pageSize);
-
-  interface companyType {
-    id: number;
-    name: string;
-    address: string;
-    website: string;
-    foundedDate: string;
-    founded: string;
-    members: string;
-    created_date: string;
-    source: string;
-  }
 
   useEffect(() => {
     fetchLeads(currentPage, searchParams);
     fetchLeadType();
     fetchLeadStatues();
     fetchLeadSources();
-    fetchContactChannels();
-    fetchUsers();
+    // fetchContactChannels();
+    // fetchUsers();
   }, [currentPage, searchParams]);
 
   const fetchLeadStatues = async () => {
@@ -89,50 +73,50 @@ export default function LeadsPage() {
       });
   };
 
-  const fetchContactChannels = async () => {
-    http
-      .get("/api/contact_channels")
-      .then((result) => {
-        setContactChannels(result?.data);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
+  // const fetchContactChannels = async () => {
+  //   http
+  //     .get("/api/contact_channels")
+  //     .then((result) => {
+  //       setContactChannels(result?.data);
+  //     })
+  //     .catch((err) => {
+  //       console.log(err);
+  //     });
+  // };
 
-  const fetchUsers = async () => {
-    http
-      .get("/api/users/list")
-      .then((result) => {
-        setUsers(result?.data);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
+  // const fetchUsers = async () => {
+  //   http
+  //     .get("/api/users/list")
+  //     .then((result) => {
+  //       setUsers(result?.data);
+  //     })
+  //     .catch((err) => {
+  //       console.log(err);
+  //     });
+  // };
 
-  const handleUpload = async (e: any) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
+  // const handleUpload = async (e: any) => {
+  //   e.preventDefault();
+  //   const formData = new FormData(e.target);
 
-    setUploadSpinner(true);
-    setUploadMessage("");
+  //   setUploadSpinner(true);
+  //   setUploadMessage("");
 
-    try {
-      const response = await fetch("http://localhost:3000/api/import", {
-        method: "POST",
-        body: formData,
-      });
+  //   try {
+  //     const response = await fetch("http://localhost:3000/api/import", {
+  //       method: "POST",
+  //       body: formData,
+  //     });
 
-      const message = await response.text();
-      setUploadSpinner(false);
-      setUploadMessage(message);
-    } catch (error) {
-      setUploadSpinner(false);
-      setUploadMessage("An error occurred during the upload.");
-      console.error(error);
-    }
-  };
+  //     const message = await response.text();
+  //     setUploadSpinner(false);
+  //     setUploadMessage(message);
+  //   } catch (error) {
+  //     setUploadSpinner(false);
+  //     setUploadMessage("An error occurred during the upload.");
+  //     console.error(error);
+  //   }
+  // };
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -141,7 +125,9 @@ export default function LeadsPage() {
     }
   };
 
-  const handleSearchChange = (event: any) => {
+  const handleSearchChange = (
+    event: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>
+  ) => {
     const { name, value } = event.target;
 
     // Update the searchForm state
@@ -167,45 +153,45 @@ export default function LeadsPage() {
     fetchLeads(1, queryString);
   };
 
-  const handleExport = async () => {
-    const exportParams =
-      selectedIds.length > 0 ? `ids=${selectedIds.join(",")}` : searchParams;
+  // const handleExport = async () => {
+  //   const exportParams =
+  //     selectedIds.length > 0 ? `ids=${selectedIds.join(",")}` : searchParams;
 
-    try {
-      const response = await fetch(
-        `http://localhost:3000/api/export?${exportParams}`,
-        {
-          method: "GET",
-        }
-      );
+  //   try {
+  //     const response = await fetch(
+  //       `http://localhost:3000/api/export?${exportParams}`,
+  //       {
+  //         method: "GET",
+  //       }
+  //     );
 
-      if (response.ok) {
-        const disposition = response.headers.get("Content-Disposition");
-        let filename = "companies.csv";
+  //     if (response.ok) {
+  //       const disposition = response.headers.get("Content-Disposition");
+  //       let filename = "companies.csv";
 
-        if (disposition && disposition.includes("filename=")) {
-          const matches = disposition.match(/filename="?([^";]+)"?/);
-          if (matches && matches[1]) {
-            filename = matches[1];
-          }
-        }
+  //       if (disposition && disposition.includes("filename=")) {
+  //         const matches = disposition.match(/filename="?([^";]+)"?/);
+  //         if (matches && matches[1]) {
+  //           filename = matches[1];
+  //         }
+  //       }
 
-        const blob = await response.blob();
-        const downloadUrl = URL.createObjectURL(blob);
+  //       const blob = await response.blob();
+  //       const downloadUrl = URL.createObjectURL(blob);
 
-        const a = document.createElement("a");
-        a.href = downloadUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      } else {
-        console.error("Failed to export CSV:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error exporting CSV:", error);
-    }
-  };
+  //       const a = document.createElement("a");
+  //       a.href = downloadUrl;
+  //       a.download = filename;
+  //       document.body.appendChild(a);
+  //       a.click();
+  //       a.remove();
+  //     } else {
+  //       console.error("Failed to export CSV:", response.statusText);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error exporting CSV:", error);
+  //   }
+  // };
 
   const fetchLeads = (currentPage: number, searchParams: string) => {
     http
@@ -214,11 +200,9 @@ export default function LeadsPage() {
         setLeads(response?.data?.data);
         setTotal(response?.data?.pagination?.totalRecords);
       })
-      .catch((err) => {
-        setError(err);
-        setLoading(false);
+      .catch((err: string) => {
+        console.log(err);
       });
-    setLoading(true);
   };
 
   return (
@@ -287,7 +271,7 @@ export default function LeadsPage() {
               className="w-full px-4 py-2 border rounded"
             >
               <option value="">All</option>
-              {leadTypes?.map((item) => (
+              {leadTypes?.map((item: leadSourcesType) => (
                 <option key={item?.id} value={item?.id}>
                   {item?.name}
                 </option>

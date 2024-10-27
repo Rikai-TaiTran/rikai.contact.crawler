@@ -6,7 +6,6 @@ import { IoHome } from "react-icons/io5";
 import { RiMenu3Fill } from "react-icons/ri";
 import { FaFilterCircleDollar } from "react-icons/fa6";
 import { CiViewList } from "react-icons/ci";
-import { FaUsers } from "react-icons/fa";
 import { FiUsers } from "react-icons/fi";
 import { FiPieChart } from "react-icons/fi";
 

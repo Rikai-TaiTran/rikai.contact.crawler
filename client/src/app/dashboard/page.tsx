@@ -1,21 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import {
-  FaUser,
-  FaBuilding,
-  FaEnvelope,
-  FaPhone,
-  FaCalendar,
-  FaPlus,
-  FaUpload,
-  FaPaperclip,
-  FaSpinner,
-  FaChartBar,
-  FaUsers,
-  FaDollarSign,
-  FaChartLine,
-  FaFilter,
-} from "react-icons/fa";
+import { FaFilter } from "react-icons/fa";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -39,30 +24,36 @@ ChartJS.register(
   ArcElement
 );
 
+interface statisticType {
+  name: string;
+  count: string;
+}
+
 const DashboardPage = () => {
+  const [leadStatuses, setLeadStatuses] = useState<statisticType[]>([]);
+  const [ownerStatistics, setOwnerStatistics] = useState<statisticType[]>([]);
+  const [period, setperiod] = useState<string>("this_month");
+  const [leadTypes, setLeadTypes] = useState<statisticType[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("overview");
+
+  interface itemType {
+    name: string;
+    count: string;
+  }
+
   useEffect(() => {
     getLeadStatisticsByStatus();
     getLeadStatisticsByType();
     getLeadStatisticsByOwner(period);
-  }, []);
-  const [loading, setLoading] = useState(false);
-  const [leadStatuses, setLeadStatuses] = useState([]);
-  const [ownerStatistics, setOwnerStatistics] = useState([]);
-  const [period, setperiod] = useState("this_month");
-  const [leadTypes, setLeadTypes] = useState([]);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [newContact, setNewContact] = useState({
-    date: "",
-    content: "",
-  });
-  const statusNames = leadStatuses.map((item) => item?.name);
-  const statusCount = leadStatuses.map((item) => item?.count);
+  }, [period]);
+  const statusNames = leadStatuses.map((item: itemType) => item?.name);
+  const statusCount = leadStatuses.map((item: itemType) => item?.count);
 
-  const typeNames = leadTypes.map((item) => item?.name);
-  const typeCounts = leadTypes.map((item) => item?.count);
+  const typeNames = leadTypes.map((item: itemType) => item?.name);
+  const typeCounts = leadTypes.map((item: itemType) => item?.count);
 
-  const ownerCounts = ownerStatistics.map((item) => item?.count);
-  const ownerNames = ownerStatistics.map((item) => item?.name);
+  const ownerCounts = ownerStatistics.map((item: itemType) => item?.count);
+  const ownerNames = ownerStatistics.map((item: itemType) => item?.name);
 
   const getLeadStatisticsByStatus = async () => {
     http
@@ -129,20 +120,7 @@ const DashboardPage = () => {
     ],
   };
 
-  const [contactHistory, setContactHistory] = useState([
-    {
-      date: "2024-01-15",
-      content: "Initial meeting discussion about requirements",
-      attachments: ["proposal.pdf"],
-    },
-    {
-      date: "2024-01-10",
-      content: "Follow-up email sent regarding pricing",
-      attachments: [],
-    },
-  ]);
-
-  const handleChangeReport = (event: any) => {
+  const handleChangeReport = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const { value } = event.target;
     setperiod(value);
     getLeadStatisticsByOwner(value);
@@ -200,67 +178,67 @@ const DashboardPage = () => {
     </div>
   );
 
-  const DetailedReport = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="text-blue-600">
-              <FaUsers className="text-2xl" />
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-600">Total Leads</div>
-              <div className="text-xl font-bold">245</div>
-            </div>
-          </div>
-        </div>
-        <div className="bg-green-50 p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="text-green-600">
-              <FaChartLine className="text-2xl" />
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-600">Conversion Rate</div>
-              <div className="text-xl font-bold">24.5%</div>
-            </div>
-          </div>
-        </div>
-        <div className="bg-yellow-50 p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="text-yellow-600">
-              <FaDollarSign className="text-2xl" />
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-600">Potential Revenue</div>
-              <div className="text-xl font-bold">$1.2M</div>
-            </div>
-          </div>
-        </div>
-      </div>
+  //   const DetailedReport = () => (
+  //     <div className="space-y-6">
+  //       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  //         <div className="bg-blue-50 p-4 rounded-lg">
+  //           <div className="flex items-center justify-between">
+  //             <div className="text-blue-600">
+  //               <FaUsers className="text-2xl" />
+  //             </div>
+  //             <div className="text-right">
+  //               <div className="text-sm text-gray-600">Total Leads</div>
+  //               <div className="text-xl font-bold">245</div>
+  //             </div>
+  //           </div>
+  //         </div>
+  //         <div className="bg-green-50 p-4 rounded-lg">
+  //           <div className="flex items-center justify-between">
+  //             <div className="text-green-600">
+  //               <FaChartLine className="text-2xl" />
+  //             </div>
+  //             <div className="text-right">
+  //               <div className="text-sm text-gray-600">Conversion Rate</div>
+  //               <div className="text-xl font-bold">24.5%</div>
+  //             </div>
+  //           </div>
+  //         </div>
+  //         <div className="bg-yellow-50 p-4 rounded-lg">
+  //           <div className="flex items-center justify-between">
+  //             <div className="text-yellow-600">
+  //               <FaDollarSign className="text-2xl" />
+  //             </div>
+  //             <div className="text-right">
+  //               <div className="text-sm text-gray-600">Potential Revenue</div>
+  //               <div className="text-xl font-bold">$1.2M</div>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4">Recent Lead Activities</h3>
-        <div className="space-y-4">
-          {contactHistory.map((contact, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">
-                  {contact.date}
-                </span>
-                {contact.attachments.length > 0 && (
-                  <div className="flex items-center text-sm text-gray-600">
-                    <FaPaperclip className="mr-1" />
-                    {contact.attachments.length} attachment(s)
-                  </div>
-                )}
-              </div>
-              <p className="text-gray-800">{contact.content}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  //       <div className="bg-white p-6 rounded-lg shadow">
+  //         <h3 className="text-lg font-semibold mb-4">Recent Lead Activities</h3>
+  //         <div className="space-y-4">
+  //           {contactHistory.map((contact, index) => (
+  //             <div key={index} className="bg-gray-50 p-4 rounded-lg">
+  //               <div className="flex items-center justify-between mb-2">
+  //                 <span className="text-sm font-medium text-gray-600">
+  //                   {contact.date}
+  //                 </span>
+  //                 {contact.attachments.length > 0 && (
+  //                   <div className="flex items-center text-sm text-gray-600">
+  //                     <FaPaperclip className="mr-1" />
+  //                     {contact.attachments.length} attachment(s)
+  //                   </div>
+  //                 )}
+  //               </div>
+  //               <p className="text-gray-800">{contact.content}</p>
+  //             </div>
+  //           ))}
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
 
   return (
     <div className="bg-gray-100 p-4">

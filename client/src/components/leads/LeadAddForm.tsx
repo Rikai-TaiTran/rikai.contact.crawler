@@ -1,17 +1,22 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import http from "@/lib/http";
 import formatToISO from "@/utils/formatTime";
 import { useFormik } from "formik";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as Yup from "yup";
 
-const LeadAddForm = ({ id }) => {
-  const [leadData, setLeadData] = useState();
-  const [leadTypes, setLeadTypes] = useState([]);
-  const [leadSources, setLeadSources] = useState([]);
-  const [leadStatuses, setLeadStatuses] = useState([]);
-  const [contactChannels, setContactChannels] = useState([]);
-  const [users, setUsers] = useState([]);
+interface LeadAddFormProps {
+  id: string | number | null;
+}
+const LeadAddForm: React.FC<LeadAddFormProps> = ({ id }) => {
+  const [leadData, setLeadData] = useState<leadType>();
+  const [leadTypes, setLeadTypes] = useState<leadTypeType[]>([]);
+  const [leadSources, setLeadSources] = useState<leadSourcesType[]>([]);
+  const [leadStatuses, setLeadStatuses] = useState<leadStatusType[]>([]);
+  const [contactChannels, setContactChannels] = useState<leadStatusType[]>([]);
+  const [users, setUsers] = useState<userType[]>([]);
   const router = useRouter();
   const formik = useFormik({
     initialValues: {

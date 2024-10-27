@@ -3,17 +3,16 @@ import React, { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { FaUser, FaLock, FaEnvelope } from "react-icons/fa";
-import http from '../../lib/http';
+import http from "../../lib/http";
 import { useDispatch } from "react-redux";
-import { loginSuccess } from "../../redux/authSlice"
+import { loginSuccess } from "../../redux/authSlice";
 import { useRouter } from "next/navigation";
-
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const dispatch = useDispatch();
-  const router  = useRouter();
+  const router = useRouter();
 
   const formik = useFormik({
     initialValues: {
@@ -29,28 +28,24 @@ const LoginPage = () => {
     onSubmit: async (values) => {
       setErrorMessage(""); // Reset error message
       try {
-        if(isLogin) {
-            const response = await http.post(
-                "/api/users/login", // URL của API đăng nhập hoặc đăng ký
-                values
-              );
-            // Dispatch login success action
-            dispatch(loginSuccess(response.data?.user));
-            localStorage.setItem('authToken', response.data?.token);
-            router.push('/leads');
+        if (isLogin) {
+          const response = await http.post(
+            "/api/users/login", // URL của API đăng nhập hoặc đăng ký
+            values
+          );
+          // Dispatch login success action
+          dispatch(loginSuccess(response.data?.user));
+          localStorage.setItem("authToken", response.data?.token);
+          router.push("/leads");
         } else {
-            const response = await http.post("/api/users/register", // URL của API đăng nhập hoặc đăng ký
-                values
-              );
-            if(response) setIsLogin(false);
+          const response = await http.post(
+            "/api/users/register", // URL của API đăng nhập hoặc đăng ký
+            values
+          );
+          if (response) setIsLogin(false);
         }
-
       } catch (error) {
-        if (http.isAxiosError(error)) {
-          setErrorMessage(error.response?.data?.message || "Something went wrong");
-        } else {
-          setErrorMessage("An unexpected error occurred");
-        }
+        console.log(error);
       }
     },
   });
@@ -89,7 +84,9 @@ const LoginPage = () => {
                     name="name"
                     type="text"
                     className={`appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border ${
-                      formik.touched.name && formik.errors.name ? "border-red-500" : "border-gray-300"
+                      formik.touched.name && formik.errors.name
+                        ? "border-red-500"
+                        : "border-gray-300"
                     } placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm`}
                     placeholder="Full Name"
                     value={formik.values.name}
@@ -115,7 +112,9 @@ const LoginPage = () => {
                   name="email"
                   type="text"
                   className={`appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border ${
-                    formik.touched.email && formik.errors.email ? "border-red-500" : "border-gray-300"
+                    formik.touched.email && formik.errors.email
+                      ? "border-red-500"
+                      : "border-gray-300"
                   } placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm`}
                   placeholder="Email address"
                   value={formik.values.email}
@@ -140,7 +139,9 @@ const LoginPage = () => {
                   name="password"
                   type="password"
                   className={`appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border ${
-                    formik.touched.password && formik.errors.password ? "border-red-500" : "border-gray-300"
+                    formik.touched.password && formik.errors.password
+                      ? "border-red-500"
+                      : "border-gray-300"
                   } placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm`}
                   placeholder="Password"
                   value={formik.values.password}
@@ -163,13 +164,19 @@ const LoginPage = () => {
                   type="checkbox"
                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                <label
+                  htmlFor="remember-me"
+                  className="ml-2 block text-sm text-gray-900"
+                >
                   Remember me
                 </label>
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-purple-600 hover:text-purple-500">
+                <a
+                  href="#"
+                  className="font-medium text-purple-600 hover:text-purple-500"
+                >
                   Forgot your password?
                 </a>
               </div>

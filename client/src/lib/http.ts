@@ -1,15 +1,16 @@
-import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useRouter } from "next/navigation";
 
 // Tạo instance Axios
 const http = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_URL, // Thay thế với URL API của bạn
+  baseURL: process.env.NEXT_PUBLIC_URL as string, // Assert type to string
   timeout: 10000, // Thời gian chờ (10 giây)
 });
 
 // Thêm interceptor để đính kèm token
 http.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
+    // Use InternalAxiosRequestConfig here
     const token = localStorage.getItem("authToken"); // Lấy token từ local storage
     if (token) {
       config.headers.Authorization = `Bearer ${token}`; // Đính kèm token vào headers

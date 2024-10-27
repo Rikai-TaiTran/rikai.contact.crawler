@@ -8,17 +8,22 @@ import { useState, useEffect } from "react";
 import { CiCirclePlus } from "react-icons/ci";
 
 export default function ToiawasePage() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [searchForm, setSearchForm] = useState({});
-  const [searchParams, setSearchParams] = useState("");
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [uploadMessage, setUploadMessage] = useState("");
-  const [uploadSpinner, setUploadSpinner] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [toiawases, setToiawases] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [error, setError] = useState(null);
+  interface SearchForm {
+    createdDateFrom: string;
+    createdDateTo: string;
+    isBlackList: string;
+    crawlSource: string;
+  }
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [total, setTotal] = useState<number>(0);
+  const [searchForm, setSearchForm] = useState<SearchForm>({
+    createdDateFrom: "",
+    createdDateTo: "",
+    isBlackList: "",
+    crawlSource: "",
+  });
+  const [searchParams, setSearchParams] = useState<string>("");
+  const [toiawases, setToiawases] = useState<toiawaseType[]>([]);
   const pageSize = 20;
   const router = useRouter();
 
@@ -26,42 +31,30 @@ export default function ToiawasePage() {
 
   useEffect(() => {
     fetchToiawases(currentPage, searchParams);
-    fetchUsers();
   }, [currentPage, searchParams]);
 
-  const fetchUsers = async () => {
-    http
-      .get("/api/users/list")
-      .then((result) => {
-        setUsers(result?.data);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
+  // const handleUpload = async (e: any) => {
+  //   e.preventDefault();
+  //   const formData = new FormData(e.target);
 
-  const handleUpload = async (e: any) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
+  //   setUploadSpinner(true);
+  //   setUploadMessage("");
 
-    setUploadSpinner(true);
-    setUploadMessage("");
+  //   try {
+  //     const response = await fetch("http://localhost:3000/api/import", {
+  //       method: "POST",
+  //       body: formData,
+  //     });
 
-    try {
-      const response = await fetch("http://localhost:3000/api/import", {
-        method: "POST",
-        body: formData,
-      });
-
-      const message = await response.text();
-      setUploadSpinner(false);
-      setUploadMessage(message);
-    } catch (error) {
-      setUploadSpinner(false);
-      setUploadMessage("An error occurred during the upload.");
-      console.error(error);
-    }
-  };
+  //     const message = await response.text();
+  //     setUploadSpinner(false);
+  //     setUploadMessage(message);
+  //   } catch (error) {
+  //     setUploadSpinner(false);
+  //     setUploadMessage("An error occurred during the upload.");
+  //     console.error(error);
+  //   }
+  // };
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -70,7 +63,9 @@ export default function ToiawasePage() {
     }
   };
 
-  const handleSearchChange = (event: any) => {
+  const handleSearchChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = event.target;
     // Update search criteria based on the changed field
     setSearchForm((prev) => ({
@@ -88,45 +83,45 @@ export default function ToiawasePage() {
     fetchToiawases(currentPage, queryString);
   };
 
-  const handleExport = async () => {
-    const exportParams =
-      selectedIds.length > 0 ? `ids=${selectedIds.join(",")}` : searchParams;
+  // const handleExport = async () => {
+  //   const exportParams =
+  //     selectedIds.length > 0 ? `ids=${selectedIds.join(",")}` : searchParams;
 
-    try {
-      const response = await fetch(
-        `http://localhost:3000/api/export?${exportParams}`,
-        {
-          method: "GET",
-        }
-      );
+  //   try {
+  //     const response = await fetch(
+  //       `http://localhost:3000/api/export?${exportParams}`,
+  //       {
+  //         method: "GET",
+  //       }
+  //     );
 
-      if (response.ok) {
-        const disposition = response.headers.get("Content-Disposition");
-        let filename = "companies.csv";
+  //     if (response.ok) {
+  //       const disposition = response.headers.get("Content-Disposition");
+  //       let filename = "companies.csv";
 
-        if (disposition && disposition.includes("filename=")) {
-          const matches = disposition.match(/filename="?([^";]+)"?/);
-          if (matches && matches[1]) {
-            filename = matches[1];
-          }
-        }
+  //       if (disposition && disposition.includes("filename=")) {
+  //         const matches = disposition.match(/filename="?([^";]+)"?/);
+  //         if (matches && matches[1]) {
+  //           filename = matches[1];
+  //         }
+  //       }
 
-        const blob = await response.blob();
-        const downloadUrl = URL.createObjectURL(blob);
+  //       const blob = await response.blob();
+  //       const downloadUrl = URL.createObjectURL(blob);
 
-        const a = document.createElement("a");
-        a.href = downloadUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      } else {
-        console.error("Failed to export CSV:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error exporting CSV:", error);
-    }
-  };
+  //       const a = document.createElement("a");
+  //       a.href = downloadUrl;
+  //       a.download = filename;
+  //       document.body.appendChild(a);
+  //       a.click();
+  //       a.remove();
+  //     } else {
+  //       console.error("Failed to export CSV:", response.statusText);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error exporting CSV:", error);
+  //   }
+  // };
 
   const fetchToiawases = (currentPage: number, searchParams: string) => {
     http
@@ -135,11 +130,9 @@ export default function ToiawasePage() {
         setToiawases(response?.data?.data);
         setTotal(response?.data?.pagination?.totalRecords);
       })
-      .catch((err) => {
-        setError(err);
-        setLoading(false);
+      .catch((err: string) => {
+        console.log(err);
       });
-    setLoading(true);
   };
 
   return (
@@ -210,7 +203,7 @@ export default function ToiawasePage() {
             />
           </div>
           <div className="w-full lg:w-1/4">
-            <label htmlFor="countryRegion">Nguồn crawl</label>
+            <label htmlFor="crawlSource">Nguồn crawl</label>
             <select
               onChange={handleSearchChange}
               id="crawlSource"

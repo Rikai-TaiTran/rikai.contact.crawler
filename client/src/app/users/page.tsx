@@ -8,11 +8,9 @@ import { useState, useEffect } from "react";
 import { CiCirclePlus } from "react-icons/ci";
 
 export default function UserListPage() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [searchParams, setSearchParams] = useState("");
-  const [users, setUsers] = useState<any[]>([]);
-  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [total, setTotal] = useState<number>(0);
+  const [users, setUsers] = useState<userType[]>([]);
   const pageSize = 20;
   const router = useRouter();
 
@@ -20,7 +18,7 @@ export default function UserListPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, searchParams]);
+  }, [currentPage]);
 
   const fetchUsers = async () => {
     http

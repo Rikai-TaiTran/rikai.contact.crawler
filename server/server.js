@@ -33,7 +33,7 @@ app.use("/api/lead_histories", auth, leadHistoryRoutes);
 app.use("/api/toiawase_histories", auth, toiawaseHistoryRoutes);
 app.use("/", require("./routes/dowloadFileRouters"));
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

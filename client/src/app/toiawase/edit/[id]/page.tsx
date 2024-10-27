@@ -1,15 +1,18 @@
 "use client";
-import LeadAddForm from "@/components/leads/LeadAddForm";
 import ToiawaseAddForm from "@/components/toiawase/ToiawaseAddForm";
-import http from "@/lib/http";
-import { useFormik } from "formik";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import * as Yup from "yup";
+import { useEffect } from "react";
 
-const ToiawaseEditPage = ({ params }) => {
+interface ToiawaseEditPageParams {
+  id: string; // or number, depending on your route structure
+  // Add other parameters as needed
+}
+
+interface ToiawaseEditPageProps {
+  params: ToiawaseEditPageParams;
+}
+
+const ToiawaseEditPage: React.FC<ToiawaseEditPageProps> = ({ params }) => {
   const { id } = params;
-  const router = useRouter();
 
   useEffect(() => {}, []);
 
