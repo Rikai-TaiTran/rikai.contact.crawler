@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const getAll = req.query.getAll === "true";
+    const getAll = req.query.getall === "true";
 
     if (getAll) {
       const users = await User.findAll();

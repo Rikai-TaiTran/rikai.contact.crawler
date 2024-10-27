@@ -31,6 +31,7 @@ app.use("/api/lead_types", auth, leadTypeRoutes);
 app.use("/api/contact_channels", auth, contactChannelRoutes);
 app.use("/api/lead_histories", auth, leadHistoryRoutes);
 app.use("/api/toiawase_histories", auth, toiawaseHistoryRoutes);
+app.use("/", require("./routes/dowloadFileRouters"));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

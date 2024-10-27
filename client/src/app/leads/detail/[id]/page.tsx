@@ -3,7 +3,7 @@ import http from "@/lib/http";
 import formatToISO from "@/utils/formatTime";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CiEdit } from "react-icons/ci";
+import { CiEdit, CiTrash } from "react-icons/ci";
 import * as Yup from "yup";
 
 import {
@@ -19,6 +19,8 @@ import {
 } from "react-icons/fa";
 import { ErrorMessage } from "formik";
 import { useFormik } from "formik";
+import Link from "next/link";
+import DialogConfirm from "@/components/dialog/DialogConfirm";
 
 const LeadDetails = ({ params }) => {
   const { id } = params;
@@ -28,6 +30,7 @@ const LeadDetails = ({ params }) => {
   const router = useRouter();
   const [leadData, setLeadData] = useState();
   const [contactHistory, setContactHistory] = useState([]);
+  const [isOpenDialog, setIsOpenDialog] = useState(false);
   useEffect(() => {
     fetchLead();
     fetchLeadHistory();
@@ -99,6 +102,28 @@ const LeadDetails = ({ params }) => {
       });
   };
 
+  const deleteLead = async () => {
+    http
+      .delete(`/api/leads/${id}`)
+      .then((result) => {
+        if (result) {
+          setIsOpenDialog(false);
+          router.push("/leads");
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const onClose = () => {
+    setIsOpenDialog(false);
+  };
+
+  const onConfirm = () => {
+    deleteLead();
+  };
+
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files);
     setFiles([...files, ...newFiles]);
@@ -129,12 +154,20 @@ const LeadDetails = ({ params }) => {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">
             Lead Details
           </h2>
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={() => router.push(`/leads/edit/${id}`)}
-          >
-            <CiEdit size={20} className="inline" /> Edit lead
-          </button>
+          <div className="flex gap-3">
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+              onClick={() => router.push(`/leads/edit/${id}`)}
+            >
+              <CiEdit size={20} className="inline" /> Edit lead
+            </button>
+            <button
+              className="bg-red-600 text-white px-4 py-2 rounded"
+              onClick={() => setIsOpenDialog(true)}
+            >
+              <CiTrash size={20} className="inline" /> Delete
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -262,16 +295,25 @@ const LeadDetails = ({ params }) => {
               <p className="text-gray-800">{contact?.description}</p>
               {contact?.file && (
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-700">
-                    <FaPaperclip className="mr-1" />
-                    {contact?.file?.fileName}
-                  </span>
+                  <Link target="_blank" href={contact?.file?.fileUrl}>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-700">
+                      <FaPaperclip className="mr-1" />
+                      {contact?.file?.fileName}
+                    </span>
+                  </Link>
                 </div>
               )}
             </div>
           ))}
         </div>
       </div>
+      <DialogConfirm
+        isOpen={isOpenDialog}
+        onClose={onClose}
+        onConfirm={onConfirm}
+        message={`Are you sure you want to delete ${leadData?.fullName}`}
+        title="Warning"
+      />
     </div>
   );
 };

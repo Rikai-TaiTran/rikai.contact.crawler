@@ -21,7 +21,8 @@ const storage = multer.diskStorage({
     cb(null, "uploads/"); // Folder where files are saved
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${file.originalname}`;
+    const fileName = Buffer.from(file.originalname, "latin1").toString("utf8");
+    const uniqueSuffix = `${Date.now()}-${fileName}`;
     cb(null, uniqueSuffix); // Save file with a unique name
   },
 });
@@ -44,9 +45,14 @@ exports.createLeadHistory = async (req, res) => {
 
       // If a file is uploaded, save its details in the File table
       if (req.file) {
+        const fileUrl = `${req.protocol}://${req.get("host")}/files/${
+          req.file.filename
+        }`;
         const fileData = {
-          fileName: req.file.originalname,
-          fileUrl: req.file.path, // Path where the file is saved
+          fileName: Buffer.from(req.file.originalname, "latin1").toString(
+            "utf8"
+          ),
+          fileUrl: fileUrl, // Path where the file is saved
           fileType: req.file.mimetype,
         };
 

@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { CiEdit } from "react-icons/ci";
+import { CiTrash } from "react-icons/ci";
+
 import {
   FaUser,
   FaBuilding,
@@ -17,10 +19,12 @@ import {
   FaPaperclip,
   FaSpinner,
 } from "react-icons/fa";
+import DialogConfirm from "@/components/dialog/DialogConfirm";
 
 const ToiawaseDetails = ({ params }) => {
   const { id } = params;
   const [loading, setLoading] = useState(false);
+  const [isOpenDialog, setIsOpenDialog] = useState(false);
   const router = useRouter();
   const [toiawaseData, setToiawaseData] = useState();
   const [users, setUsers] = useState();
@@ -29,7 +33,7 @@ const ToiawaseDetails = ({ params }) => {
     content: "",
   });
   useEffect(() => {
-    fetchLead();
+    fetchToiawase();
     fetchUsers();
     fetchToiawaseHistory();
   }, []);
@@ -62,7 +66,7 @@ const ToiawaseDetails = ({ params }) => {
     },
   });
 
-  const fetchLead = async () => {
+  const fetchToiawase = async () => {
     http
       .get(`/api/toiawase/${id}`)
       .then((result) => {
@@ -73,11 +77,25 @@ const ToiawaseDetails = ({ params }) => {
       });
   };
 
+  const deleteToiawase = async () => {
+    http
+      .delete(`/api/toiawase/${id}`)
+      .then((result) => {
+        if (result) {
+          setIsOpenDialog(false);
+          router.push("/toiawase");
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   const fetchUsers = async () => {
     http
-      .get("/api/users/list")
+      .get("/api/users/list?getall=true")
       .then((result) => {
-        setUsers(result?.data);
+        setUsers(result?.data?.data);
       })
       .catch((err) => {
         console.log(err);
@@ -93,6 +111,14 @@ const ToiawaseDetails = ({ params }) => {
       .catch((err) => {
         console.log(err);
       });
+  };
+
+  const onClose = () => {
+    setIsOpenDialog(false);
+  };
+
+  const onConfirm = () => {
+    deleteToiawase();
   };
 
   // Dummy contact history
@@ -123,12 +149,20 @@ const ToiawaseDetails = ({ params }) => {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">
             Toiawase Details
           </h2>
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={() => router.push(`/toiawase/edit/${id}`)}
-          >
-            <CiEdit size={20} className="inline" /> Edit toiawase
-          </button>
+          <div className="flex gap-3">
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+              onClick={() => router.push(`/toiawase/edit/${id}`)}
+            >
+              <CiEdit size={20} className="inline" /> Edit
+            </button>
+            <button
+              className="bg-red-600 text-white px-4 py-2 rounded"
+              onClick={() => setIsOpenDialog(true)}
+            >
+              <CiTrash size={20} className="inline" /> Delete
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -287,6 +321,13 @@ const ToiawaseDetails = ({ params }) => {
           ))}
         </div>
       </div>
+      <DialogConfirm
+        isOpen={isOpenDialog}
+        onClose={onClose}
+        onConfirm={onConfirm}
+        message={`Are you sure you want to delete ${toiawaseData?.companyName}`}
+        title="Warning"
+      />
     </div>
   );
 };
