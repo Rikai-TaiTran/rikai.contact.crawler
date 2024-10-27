@@ -1,37 +1,44 @@
 "use client";
 
 import Pagination from "@/components/Pagination";
+import http from "@/lib/http";
+import formatToISO from "@/utils/formatTime";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { CiCirclePlus } from "react-icons/ci";
 
 export default function ToiawasePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [searchForm, setSearchForm] = useState({});
   const [searchParams, setSearchParams] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
   const [uploadMessage, setUploadMessage] = useState("");
   const [uploadSpinner, setUploadSpinner] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [companies, setCompanies] = useState<companyType[]>([]);
+  const [toiawases, setToiawases] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [error, setError] = useState(null);
-  const pageSize = 100;
+  const pageSize = 20;
+  const router = useRouter();
 
   const totalPages = Math.ceil(total / pageSize);
 
-  interface companyType {
-    id: number;
-    name: string;
-    address: string;
-    website: string;
-    foundedDate: string;
-    founded: string;
-    members: string;
-    created_date: string;
-    source: string;
-  }
-
   useEffect(() => {
-    loadCompanies(currentPage, searchParams);
+    fetchToiawases(currentPage, searchParams);
+    fetchUsers();
   }, [currentPage, searchParams]);
+
+  const fetchUsers = async () => {
+    http
+      .get("/api/users/list")
+      .then((result) => {
+        setUsers(result?.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
 
   const handleUpload = async (e: any) => {
     e.preventDefault();
@@ -58,19 +65,27 @@ export default function ToiawasePage() {
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      loadCompanies(page, searchParams);
+      fetchToiawases(page, searchParams);
       setCurrentPage(page);
     }
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const searchQuery = new URLSearchParams(formData).toString();
+  const handleSearchChange = (event: any) => {
+    const { name, value } = event.target;
+    // Update search criteria based on the changed field
+    setSearchForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
-    setSearchParams(searchQuery);
-    setCurrentPage(1); // Reset về trang đầu tiên khi tìm kiếm mới
-    // Gọi hàm loadCompanies
+    const updatedSearchForm = {
+      ...searchForm,
+      [name]: value,
+    };
+    const queryString = new URLSearchParams(updatedSearchForm).toString();
+    setSearchParams(queryString);
+    setCurrentPage(1);
+    fetchToiawases(currentPage, queryString);
   };
 
   const handleExport = async () => {
@@ -113,40 +128,24 @@ export default function ToiawasePage() {
     }
   };
 
-  const loadCompanies = (currentPage: number, searchParams: string) => {
-    setLoading(true);
-    fetch(
-      `http://localhost:3000/api/companies?page=${currentPage}&${searchParams}`
-    )
+  const fetchToiawases = (currentPage: number, searchParams: string) => {
+    http
+      .get(`/api/toiawase?page=${currentPage}&${searchParams}`)
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setCompanies(data.data);
-        setTotal(data?.total);
-        setLoading(false);
+        setToiawases(response?.data?.data);
+        setTotal(response?.data?.pagination?.totalRecords);
       })
       .catch((err) => {
         setError(err);
         setLoading(false);
       });
-  };
-
-  const toggleSelectCompany = (id: number) => {
-    setSelectedIds((prevSelectedIds) =>
-      prevSelectedIds.includes(id)
-        ? prevSelectedIds.filter((selectedId) => selectedId !== id)
-        : [...prevSelectedIds, id]
-    );
+    setLoading(true);
   };
 
   return (
     <div className="bg-gray-100 p-4">
       {/* CSV Upload Form */}
-      <div className="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md mb-6">
+      {/* <div className="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md mb-6">
         <form
           id="csvForm"
           onSubmit={handleUpload}
@@ -167,7 +166,6 @@ export default function ToiawasePage() {
                 viewBox="0 0 100 101"
                 fill="none"
               >
-                {/* SVG content */}
               </svg>
             </div>
           )}
@@ -175,116 +173,114 @@ export default function ToiawasePage() {
             <div className="mt-4 text-green-500">{uploadMessage}</div>
           )}
         </form>
-      </div>
+      </div> */}
 
       {/* Company List */}
       <div className="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-4">Company List</h2>
-        {/* Search Form */}
-        <form
-          id="searchForm"
-          className="mb-4 flex gap-2"
-          onSubmit={handleSearch}
-        >
-          <input
-            type="text"
-            name="search"
-            placeholder="Search by company name..."
-            className="p-2 border border-gray-300 rounded w-1/4"
-          />
-          <input
-            type="date"
-            name="startDate"
-            className="p-2 border border-gray-300 rounded w-1/4"
-          />
-          <input
-            type="date"
-            name="endDate"
-            className="p-2 border border-gray-300 rounded w-1/4"
-          />
+        <div className="flex justify-between mb-3 items-start">
+          <h2 className="text-2xl font-bold mb-4 mb-0">Toiawase list</h2>
           <button
-            type="submit"
-            className="bg-green-500 text-white px-4 py-2 rounded"
-          >
-            Search
-          </button>
-          <button
-            type="button"
             className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={handleExport}
+            onClick={() => router.push("/toiawase/add")}
           >
-            Export CSV
+            <CiCirclePlus size={20} className="inline" />
+            Add Toiawase
           </button>
-        </form>
+        </div>
+        {/* Search Form */}
+        <div className="flex gap-3 mb-5">
+          <div className="w-full lg:w-1/4">
+            <label htmlFor="createdDateFrom">Ngày tạo từ</label>
+            <input
+              onChange={handleSearchChange}
+              id="createdDateFrom"
+              name="createdDateFrom"
+              type="date"
+              className="w-full px-4 py-2 border rounded"
+            />
+          </div>
+          <div className="w-full lg:w-1/4">
+            <label htmlFor="createdDateTo">Đến ngày</label>
+            <input
+              onChange={handleSearchChange}
+              id="createdDateTo"
+              name="createdDateTo"
+              type="date"
+              className="w-full px-4 py-2 border rounded"
+            />
+          </div>
+          <div className="w-full lg:w-1/4">
+            <label htmlFor="countryRegion">Nguồn crawl</label>
+            <select
+              onChange={handleSearchChange}
+              id="crawlSource"
+              name="crawlSource"
+              className="w-full px-4 py-2 border rounded"
+            >
+              <option value="">Chọn nguồn crawl</option>
+              <option value="csdl_internal">cơ sở dữ liệu nội bộ</option>
+              <option value="link_web_external">trang web bên ngoài</option>
+              <option value="crawl">dịch vụ crawl</option>
+              {/* Add more options as needed */}
+            </select>
+          </div>
+          <div className="w-full lg:w-1/4">
+            <label htmlFor="isBlackList">Black list</label>
+            <select
+              onChange={handleSearchChange}
+              id="isBlackList"
+              name="isBlackList"
+              className="w-full px-4 py-2 border rounded"
+            >
+              <option value="true">Có</option>
+              <option value="false">Không</option>
+            </select>
+          </div>
+        </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="table-auto w-full border-collapse border border-gray-300">
+          <table className="table-fixed	w-full">
             <thead>
-              <tr className="bg-gray-200 text-left">
-                <th className="border border-gray-300 px-4 py-2">
-                  <input
-                    type="checkbox"
-                    onChange={(e) => {
-                      const allIds = companies.map((company) => company.id);
-                      setSelectedIds(e.target.checked ? allIds : []);
-                    }}
-                    id="checkAll"
-                    className="w-4 h-4"
-                  />
-                </th>
-                <th className="border border-gray-300 px-4 py-2">
-                  Company Name
-                </th>
-                <th className="border border-gray-300 px-4 py-2">Website</th>
-                <th className="border border-gray-300 px-4 py-2">Address</th>
-                <th className="border border-gray-300 px-4 py-2">
-                  Founded date
-                </th>
-                <th className="border border-gray-300 px-4 py-2">CEO</th>
-                <th className="border border-gray-300 px-4 py-2">Source</th>
-                <th className="border border-gray-300 px-4 py-2">
-                  Created Date
-                </th>
+              <tr className="text-left">
+                <th className="px-4 py-2">Tên công ty</th>
+                <th className="px-4 py-2">Địa chỉ công ty</th>
+                <th className="px-4 py-2">URL website</th>
+                <th className="px-4 py-2">Quy mô công ty</th>
+                <th className="px-4 py-2">Lĩnh vực hoạt động</th>
+                <th className="px-4 py-2">Nguồn crawl</th>
+                <th className="px-4 py-2">Black list</th>
+                <th className="px-4 py-2">Ngày tạo</th>
+                <th className="px-4 py-2">Ngày cập nhật cuối cùng</th>
               </tr>
             </thead>
             <tbody id="companyList">
-              {companies.map((company) => (
-                <tr key={company.id}>
-                  <td className="border border-gray-300 px-4 py-2">
-                    <input
-                      type="checkbox"
-                      className="companyCheckbox w-4 h-4"
-                      checked={selectedIds.includes(company.id)}
-                      onChange={() => toggleSelectCompany(company.id)}
-                    />
+              {toiawases.map((toiawase) => (
+                <tr
+                  key={toiawase?.id}
+                  className="cursor-pointer hover:bg-gray-200"
+                  onClick={() =>
+                    router.push(`/toiawase/detail/${toiawase?.id}`)
+                  }
+                >
+                  <td className="px-4 py-2">{toiawase?.companyName}</td>
+                  <td className="px-4 py-2">{toiawase?.companyAddress}</td>
+                  <td className="px-4 py-2">{toiawase?.companyWebsite}</td>
+                  <td className="px-4 py-2">{toiawase?.companySize}</td>
+                  <td className="px-4 py-2">{toiawase?.businessActivities}</td>
+                  <td className="px-4 py-2">{toiawase?.crawlSource}</td>
+                  <td className="px-4 py-2">
+                    <span
+                      className={`${
+                        toiawase.isBlackList ? "bg-gray-900" : "bg-green-700"
+                      } text-sm p-2 text-center text-white inline-block rounded-xl`}
+                    ></span>
                   </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.name}
+                  <td className="px-4 py-2">
+                    {formatToISO(toiawase?.createdAt)}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    <a
-                      href="${company.website}"
-                      target="_blank"
-                      className="text-blue-500"
-                    >
-                      {company.website}
-                    </a>
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.address}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.foundedDate}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.founded}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.source}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.created_date}
+                  <td className="px-4 py-2">
+                    {formatToISO(toiawase?.lastUpdateDate)}
                   </td>
                 </tr>
               ))}

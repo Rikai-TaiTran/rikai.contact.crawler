@@ -1,19 +1,37 @@
 "use client";
 
+import LeadsBoard from "@/components/leads/LeadsBoard";
 import Pagination from "@/components/Pagination";
+import http from "@/lib/http";
+import formatToISO from "@/utils/formatTime";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { CiCirclePlus } from "react-icons/ci";
 
 export default function LeadsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [searchParams, setSearchParams] = useState("");
+  const [searchForm, setSearchForm] = useState({
+    search: "",
+    leadClassification: "",
+    leadStatus: "",
+    leadSource: "",
+  });
   const [selectedIds, setSelectedIds] = useState([]);
   const [uploadMessage, setUploadMessage] = useState("");
   const [uploadSpinner, setUploadSpinner] = useState(false);
+  const [leadTypes, setLeadTypes] = useState([]);
+  const [leadSources, setLeadSources] = useState([]);
+  const [leadStatuses, setLeadStatuses] = useState([]);
+  const [contactChannels, setContactChannels] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [companies, setCompanies] = useState<companyType[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
   const [error, setError] = useState(null);
-  const pageSize = 100;
+  const pageSize = 20;
+  const router = useRouter();
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -30,8 +48,68 @@ export default function LeadsPage() {
   }
 
   useEffect(() => {
-    loadCompanies(currentPage, searchParams);
+    fetchLeads(currentPage, searchParams);
+    fetchLeadType();
+    fetchLeadStatues();
+    fetchLeadSources();
+    fetchContactChannels();
+    fetchUsers();
   }, [currentPage, searchParams]);
+
+  const fetchLeadStatues = async () => {
+    http
+      .get("/api/lead_statuses")
+      .then((result) => {
+        setLeadStatuses(result?.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const fetchLeadType = async () => {
+    http
+      .get("/api/lead_types")
+      .then((result) => {
+        setLeadTypes(result?.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const fetchLeadSources = async () => {
+    http
+      .get("/api/lead_sources")
+      .then((result) => {
+        setLeadSources(result?.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const fetchContactChannels = async () => {
+    http
+      .get("/api/contact_channels")
+      .then((result) => {
+        setContactChannels(result?.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const fetchUsers = async () => {
+    http
+      .get("/api/users/list")
+      .then((result) => {
+        setUsers(result?.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
 
   const handleUpload = async (e: any) => {
     e.preventDefault();
@@ -58,19 +136,35 @@ export default function LeadsPage() {
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      loadCompanies(page, searchParams);
+      fetchLeads(page, searchParams);
       setCurrentPage(page);
     }
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const searchQuery = new URLSearchParams(formData).toString();
+  const handleSearchChange = (event: any) => {
+    const { name, value } = event.target;
 
-    setSearchParams(searchQuery);
-    setCurrentPage(1); // Reset về trang đầu tiên khi tìm kiếm mới
-    // Gọi hàm loadCompanies
+    // Update the searchForm state
+    setSearchForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Create an updated form object for immediate query generation
+    const updatedSearchForm = {
+      ...searchForm,
+      [name]: value,
+    };
+
+    // Create the query string based on updatedSearchForm
+    const queryString = new URLSearchParams(updatedSearchForm).toString();
+
+    // Update the URL search parameters and reset the page number
+    setSearchParams(queryString);
+    setCurrentPage(1);
+
+    // Fetch data immediately with the updated search criteria
+    fetchLeads(1, queryString);
   };
 
   const handleExport = async () => {
@@ -113,40 +207,24 @@ export default function LeadsPage() {
     }
   };
 
-  const loadCompanies = (currentPage: number, searchParams: string) => {
-    setLoading(true);
-    fetch(
-      `http://localhost:3000/api/companies?page=${currentPage}&${searchParams}`
-    )
+  const fetchLeads = (currentPage: number, searchParams: string) => {
+    http
+      .get(`/api/leads?page=${currentPage}&${searchParams}`)
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setCompanies(data.data);
-        setTotal(data?.total);
-        setLoading(false);
+        setLeads(response?.data?.data);
+        setTotal(response?.data?.pagination?.totalRecords);
       })
       .catch((err) => {
         setError(err);
         setLoading(false);
       });
-  };
-
-  const toggleSelectCompany = (id: number) => {
-    setSelectedIds((prevSelectedIds) =>
-      prevSelectedIds.includes(id)
-        ? prevSelectedIds.filter((selectedId) => selectedId !== id)
-        : [...prevSelectedIds, id]
-    );
+    setLoading(true);
   };
 
   return (
     <div className="bg-gray-100 p-4">
       {/* CSV Upload Form */}
-      <div className="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md mb-6">
+      {/* <div className="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md mb-6">
         <form
           id="csvForm"
           onSubmit={handleUpload}
@@ -167,7 +245,6 @@ export default function LeadsPage() {
                 viewBox="0 0 100 101"
                 fill="none"
               >
-                {/* SVG content */}
               </svg>
             </div>
           )}
@@ -175,116 +252,119 @@ export default function LeadsPage() {
             <div className="mt-4 text-green-500">{uploadMessage}</div>
           )}
         </form>
-      </div>
+      </div> */}
 
       {/* Company List */}
       <div className="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-4">Company List</h2>
-        {/* Search Form */}
-        <form
-          id="searchForm"
-          className="mb-4 flex gap-2"
-          onSubmit={handleSearch}
-        >
-          <input
-            type="text"
-            name="search"
-            placeholder="Search by company name..."
-            className="p-2 border border-gray-300 rounded w-1/4"
-          />
-          <input
-            type="date"
-            name="startDate"
-            className="p-2 border border-gray-300 rounded w-1/4"
-          />
-          <input
-            type="date"
-            name="endDate"
-            className="p-2 border border-gray-300 rounded w-1/4"
-          />
+        <div className="flex justify-between mb-3 items-start">
+          <h2 className="text-2xl font-bold mb-4 mb-0">Leads</h2>
           <button
-            type="submit"
-            className="bg-green-500 text-white px-4 py-2 rounded"
-          >
-            Search
-          </button>
-          <button
-            type="button"
             className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={handleExport}
+            onClick={() => router.push("/leads/add")}
           >
-            Export CSV
+            <CiCirclePlus size={20} className="inline" />
+            Add Lead
           </button>
-        </form>
+        </div>
+        {/* Search Form */}
+        <div className="flex gap-3 mb-5">
+          <div className="w-full lg:w-1/4">
+            <label htmlFor="fullName">Search</label>
+            <input
+              id="search"
+              onChange={handleSearchChange}
+              name="search"
+              type="text"
+              className="w-full px-4 py-2 border rounded"
+            />
+          </div>
+          <div className="w-full lg:w-1/4">
+            <label htmlFor="leadClassification">Lead type</label>
+            <select
+              id="leadClassification"
+              name="leadClassification"
+              onChange={handleSearchChange}
+              className="w-full px-4 py-2 border rounded"
+            >
+              <option value="">All</option>
+              {leadTypes?.map((item) => (
+                <option key={item?.id} value={item?.id}>
+                  {item?.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="w-full lg:w-1/4">
+            <label htmlFor="leadStatus">Lead Status</label>
+            <select
+              id="leadStatus"
+              name="leadStatus"
+              onChange={handleSearchChange}
+              className="w-full px-4 py-2 border rounded"
+            >
+              <option value="">All</option>
+              {leadStatuses?.map((item) => (
+                <option key={item?.id} value={item?.id}>
+                  {item?.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="w-full lg:w-1/4">
+            <label htmlFor="leadSource">Lead Source</label>
+            <select
+              id="leadSource"
+              name="leadSource"
+              onChange={handleSearchChange}
+              className="w-full px-4 py-2 border rounded"
+            >
+              <option value="">All</option>
+              {leadSources?.map((item) => (
+                <option key={item?.id} value={item?.id}>
+                  {item?.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="table-auto w-full border-collapse border border-gray-300">
+          <table className="table-fixed	w-full">
             <thead>
-              <tr className="bg-gray-200 text-left">
-                <th className="border border-gray-300 px-4 py-2">
-                  <input
-                    type="checkbox"
-                    onChange={(e) => {
-                      const allIds = companies.map((company) => company.id);
-                      setSelectedIds(e.target.checked ? allIds : []);
-                    }}
-                    id="checkAll"
-                    className="w-4 h-4"
-                  />
-                </th>
-                <th className="border border-gray-300 px-4 py-2">
-                  Company Name
-                </th>
-                <th className="border border-gray-300 px-4 py-2">Website</th>
-                <th className="border border-gray-300 px-4 py-2">Address</th>
-                <th className="border border-gray-300 px-4 py-2">
-                  Founded date
-                </th>
-                <th className="border border-gray-300 px-4 py-2">CEO</th>
-                <th className="border border-gray-300 px-4 py-2">Source</th>
-                <th className="border border-gray-300 px-4 py-2">
-                  Created Date
-                </th>
+              <tr className="text-left">
+                <th className="px-4 py-2">Full Name</th>
+                <th className="px-4 py-2">Company Name</th>
+                <th className="px-4 py-2">Email</th>
+                <th className="px-4 py-2">Phone</th>
+                <th className="px-4 py-2 w-[200px]">Status</th>
+                <th className="px-4 py-2">Source</th>
+                <th className="px-4 py-2">Type</th>
+                <th className="px-4 py-2">Assignee</th>
+                <th className="px-4 py-2">Last contact date</th>
               </tr>
             </thead>
             <tbody id="companyList">
-              {companies.map((company) => (
-                <tr key={company.id}>
-                  <td className="border border-gray-300 px-4 py-2">
-                    <input
-                      type="checkbox"
-                      className="companyCheckbox w-4 h-4"
-                      checked={selectedIds.includes(company.id)}
-                      onChange={() => toggleSelectCompany(company.id)}
-                    />
+              {leads.map((lead) => (
+                <tr
+                  key={lead?.id}
+                  className="cursor-pointer hover:bg-gray-200"
+                  onClick={() => router.push(`/leads/detail/${lead?.id}`)}
+                >
+                  <td className="px-4 py-2">{lead?.fullName}</td>
+                  <td className="px-4 py-2">{lead?.companyName}</td>
+                  <td className="px-4 py-2">{lead?.email}</td>
+                  <td className="px-4 py-2">{lead?.phone}</td>
+                  <td className="px-4 py-2">
+                    <span className="bg-green-700 text-sm p-1 text-center text-white inline-block rounded">
+                      {lead?.leadStatus?.name}
+                    </span>
                   </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.name}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    <a
-                      href="${company.website}"
-                      target="_blank"
-                      className="text-blue-500"
-                    >
-                      {company.website}
-                    </a>
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.address}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.foundedDate}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.founded}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.source}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {company.created_date}
+                  <td className="px-4 py-2">{lead?.leadSource?.name}</td>
+                  <td className="px-4 py-2">{lead?.leadType?.name}</td>
+                  <td className="px-4 py-2">{lead?.user?.fullName}</td>
+                  <td className="px-4 py-2">
+                    {formatToISO(lead?.lastContactDate)}
                   </td>
                 </tr>
               ))}
@@ -297,6 +377,7 @@ export default function LeadsPage() {
           initialPage={currentPage}
         />
       </div>
+      {/* <LeadsBoard /> */}
     </div>
   );
 }
