@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 
 // Tạo instance Axios
 const http = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_URL as string, // Assert type to string
+  // baseURL: process.env.NEXT_PUBLIC_URL as string, // Assert type to string
   timeout: 10000, // Thời gian chờ (10 giây)
 });
 
