@@ -11,6 +11,7 @@ const leadTypeRoutes = require("./routes/leadTypeRoutes");
 const contactChannelRoutes = require("./routes/contactChannelRoutes");
 const leadHistoryRoutes = require("./routes/leadHistoryRoutes");
 const toiawaseHistoryRoutes = require("./routes/toiawaseHistoryRoutes");
+const importCsvRouters = require("./routes/importCsvRouters");
 
 var cors = require("cors");
 const auth = require("./middleware/auth"); // Import middleware auth
@@ -31,6 +32,7 @@ app.use("/api/lead_types", auth, leadTypeRoutes);
 app.use("/api/contact_channels", auth, contactChannelRoutes);
 app.use("/api/lead_histories", auth, leadHistoryRoutes);
 app.use("/api/toiawase_histories", auth, toiawaseHistoryRoutes);
+app.use("/api/import_csv", auth, importCsvRouters);
 app.use("/", require("./routes/dowloadFileRouters"));
 
 const PORT = process.env.PORT || 3001;

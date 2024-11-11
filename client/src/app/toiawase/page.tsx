@@ -6,6 +6,7 @@ import formatToISO from "@/utils/formatTime";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { CiCirclePlus } from "react-icons/ci";
+import { CiImport } from "react-icons/ci";
 
 export default function ToiawasePage() {
   interface SearchForm {
@@ -32,29 +33,6 @@ export default function ToiawasePage() {
   useEffect(() => {
     fetchToiawases(currentPage, searchParams);
   }, [currentPage, searchParams]);
-
-  // const handleUpload = async (e: any) => {
-  //   e.preventDefault();
-  //   const formData = new FormData(e.target);
-
-  //   setUploadSpinner(true);
-  //   setUploadMessage("");
-
-  //   try {
-  //     const response = await fetch("http://localhost:3000/api/import", {
-  //       method: "POST",
-  //       body: formData,
-  //     });
-
-  //     const message = await response.text();
-  //     setUploadSpinner(false);
-  //     setUploadMessage(message);
-  //   } catch (error) {
-  //     setUploadSpinner(false);
-  //     setUploadMessage("An error occurred during the upload.");
-  //     console.error(error);
-  //   }
-  // };
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -137,48 +115,26 @@ export default function ToiawasePage() {
 
   return (
     <div className="bg-gray-100 p-4">
-      {/* CSV Upload Form */}
-      {/* <div className="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md mb-6">
-        <form
-          id="csvForm"
-          onSubmit={handleUpload}
-          encType="multipart/form-data"
-        >
-          <input type="file" name="file" accept=".csv" className="mb-4" />
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            Import CSV
-          </button>
-          {uploadSpinner && (
-            <div className="mt-2">
-              <svg
-                aria-hidden="true"
-                className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
-                viewBox="0 0 100 101"
-                fill="none"
-              >
-              </svg>
-            </div>
-          )}
-          {uploadMessage && (
-            <div className="mt-4 text-green-500">{uploadMessage}</div>
-          )}
-        </form>
-      </div> */}
-
       {/* Company List */}
       <div className="max-w-screen-xl mx-auto bg-white p-4 rounded-lg shadow-md">
         <div className="flex justify-between mb-3 items-start">
           <h2 className="text-2xl font-bold mb-4 mb-0">Toiawase list</h2>
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={() => router.push("/toiawase/add")}
-          >
-            <CiCirclePlus size={20} className="inline" />
-            Add Toiawase
-          </button>
+          <div className="flex gap-3">
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+              onClick={() => router.push("/toiawase/add")}
+            >
+              <CiCirclePlus size={20} className="inline" />
+              Add Toiawase
+            </button>
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+              onClick={() => router.push("/toiawase/import")}
+            >
+              <CiImport size={20} className="inline" />
+              Import CSV
+            </button>
+          </div>
         </div>
         {/* Search Form */}
         <div className="flex gap-3 mb-5">
